@@ -107,11 +107,3 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
-
-# Others
-build/
-data/
-temp/
-
-# environment
-.env
