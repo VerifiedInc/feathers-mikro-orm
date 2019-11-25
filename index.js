@@ -19,6 +19,13 @@ class MikroOrmService extends adapter_commons_1.AdapterService {
         }
         return entity;
     }
+    async find(params) {
+        if (!params) {
+            return this.repository.findAll();
+        }
+        const entities = await this.repository.find(params.where, params.options);
+        return entities;
+    }
     async create(data) {
         const entity = new this.Entity(data);
         await this.repository.persistAndFlush(entity);
