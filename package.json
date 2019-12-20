@@ -1,6 +1,6 @@
 {
   "name": "feathers-mikro-orm",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A service adapter for MikroORM",
   "main": "build/index.js",
   "author": "jacobleesinger",

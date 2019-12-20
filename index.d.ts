@@ -13,7 +13,7 @@ export declare class MikroOrmService extends AdapterService<any> {
     private name;
     constructor(options: MikroOrmServiceOptions);
     setup(app: any): void;
-    get(id: Id): Promise<AnyEntity<any>>;
+    get(id: Id, params: Params): Promise<AnyEntity<any>>;
     find(params?: Params): Promise<AnyEntity<any>[]>;
     create(data: Partial<AnyEntity<any>>): Promise<AnyEntity<any>>;
     patch(id: Id, data: Partial<AnyEntity<any>>): Promise<AnyEntity<any>>;
