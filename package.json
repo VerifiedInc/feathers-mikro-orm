@@ -9,7 +9,7 @@
     "@feathersjs/adapter-commons": "^4.3.11",
     "@feathersjs/errors": "^4.3.11",
     "@feathersjs/feathers": "^4.3.11",
-    "mikro-orm": "^3.0.0-alpha.38"
+    "mikro-orm": "^3.0.0-rc"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^2.7.0",
