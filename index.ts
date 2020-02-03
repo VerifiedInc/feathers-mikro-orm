@@ -30,8 +30,8 @@ export class MikroOrmService extends AdapterService<any> {
     this.app = app;
   }
 
-  async get(id: NullableId, params: Params): Promise<AnyEntity<any>> {
-    const where = params.where || (params.query && params.query.where);
+  async get(id: NullableId, params?: Params): Promise<AnyEntity<any>> {
+    const where = params && (params.where || (params.query && params.query.where));
     const entity = await this.repository.findOne(id || where);
 
     if (!entity) {

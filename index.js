@@ -13,7 +13,7 @@ class MikroOrmService extends adapter_commons_1.AdapterService {
         this.app = app;
     }
     async get(id, params) {
-        const where = params.where || (params.query && params.query.where);
+        const where = params && (params.where || (params.query && params.query.where));
         const entity = await this.repository.findOne(id || where);
         if (!entity) {
             throw new errors_1.NotFound(`${this.name} not found`);
