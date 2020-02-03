@@ -1,6 +1,6 @@
 import { AdapterService, ServiceOptions } from '@feathersjs/adapter-commons';
 import { NotFound } from '@feathersjs/errors';
-import { Id, Params } from '@feathersjs/feathers';
+import { Id, NullableId, Params } from '@feathersjs/feathers';
 
 import { EntityRepository, AnyEntity } from 'mikro-orm';
 
@@ -30,7 +30,7 @@ export class MikroOrmService extends AdapterService<any> {
     this.app = app;
   }
 
-  async get(id: Id, params: Params): Promise<AnyEntity<any>> {
+  async get(id: NullableId, params: Params): Promise<AnyEntity<any>> {
     const where = params.where || (params.query && params.query.where);
     const entity = await this.repository.findOne(id || where);
 
