@@ -49,13 +49,13 @@ export class MikroOrmService extends AdapterService<any> {
     return entities;
   }
 
-  async create(data: Partial<AnyEntity<any>>): Promise<AnyEntity<any>> {
+  async create(data: Partial<AnyEntity<any>>, params?: Params): Promise<AnyEntity<any>> {
     const entity = new this.Entity(data);
     await this.repository.persistAndFlush(entity);
     return entity;
   }
 
-  async patch(id: Id, data: Partial<AnyEntity<any>>): Promise<AnyEntity<any>> {
+  async patch(id: Id, data: Partial<AnyEntity<any>>, params?: Params): Promise<AnyEntity<any>> {
     const entity = await this.repository.findOne(id);
 
     if (!entity) {
@@ -67,7 +67,7 @@ export class MikroOrmService extends AdapterService<any> {
     return entity;
   }
 
-  async remove(id: Id): Promise<AnyEntity<any>> {
+  async remove(id: Id, params?: Params): Promise<AnyEntity<any>> {
     const entity = await this.repository.findOne(id);
 
     if (!entity) {
