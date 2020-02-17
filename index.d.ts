@@ -15,9 +15,9 @@ export declare class MikroOrmService extends AdapterService<any> {
     setup(app: any): void;
     get(id: NullableId, params?: Params): Promise<AnyEntity<any>>;
     find(params?: Params): Promise<AnyEntity<any>[]>;
-    create(data: Partial<AnyEntity<any>>): Promise<AnyEntity<any>>;
-    patch(id: Id, data: Partial<AnyEntity<any>>): Promise<AnyEntity<any>>;
-    remove(id: Id): Promise<AnyEntity<any>>;
+    create(data: Partial<AnyEntity<any>>, params?: Params): Promise<AnyEntity<any>>;
+    patch(id: Id, data: Partial<AnyEntity<any>>, params?: Params): Promise<AnyEntity<any>>;
+    remove(id: Id, params?: Params): Promise<AnyEntity<any>>;
 }
 export default function (options: MikroOrmServiceOptions): MikroOrmService;
 export {};
