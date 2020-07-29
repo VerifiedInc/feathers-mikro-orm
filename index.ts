@@ -56,7 +56,8 @@ export class MikroOrmService extends AdapterService<any> {
   }
 
   async patch(id: Id, data: Partial<AnyEntity<any>>, params?: Params): Promise<AnyEntity<any>> {
-    const entity = await this.repository.findOne(id);
+    const where = params?.where || id;
+    const entity = await this.repository.findOne(where);
 
     if (!entity) {
       throw new NotFound(`cannot patch ${this.name}, entity not found`);
@@ -68,7 +69,8 @@ export class MikroOrmService extends AdapterService<any> {
   }
 
   async remove(id: Id, params?: Params): Promise<AnyEntity<any>> {
-    const entity = await this.repository.findOne(id);
+    const where = params?.where || id;
+    const entity = await this.repository.findOne(where);
 
     if (!entity) {
       throw new NotFound(`cannot remove ${this.name}, entity not found`);

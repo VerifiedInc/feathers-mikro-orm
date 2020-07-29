@@ -33,7 +33,9 @@ class MikroOrmService extends adapter_commons_1.AdapterService {
         return entity;
     }
     async patch(id, data, params) {
-        const entity = await this.repository.findOne(id);
+        var _a;
+        const where = ((_a = params) === null || _a === void 0 ? void 0 : _a.where) || id;
+        const entity = await this.repository.findOne(where);
         if (!entity) {
             throw new errors_1.NotFound(`cannot patch ${this.name}, entity not found`);
         }
@@ -42,7 +44,9 @@ class MikroOrmService extends adapter_commons_1.AdapterService {
         return entity;
     }
     async remove(id, params) {
-        const entity = await this.repository.findOne(id);
+        var _a;
+        const where = ((_a = params) === null || _a === void 0 ? void 0 : _a.where) || id;
+        const entity = await this.repository.findOne(where);
         if (!entity) {
             throw new errors_1.NotFound(`cannot remove ${this.name}, entity not found`);
         }
