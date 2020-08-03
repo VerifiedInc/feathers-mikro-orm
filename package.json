@@ -29,5 +29,8 @@
     "pg": "^7.12.1",
     "ts-jest": "^26.1.4",
     "typescript": "^3.9.7"
+  },
+  "scripts": {
+    "lint": "eslint \"index.ts\" \"test/**.ts\""
   }
 }
