@@ -31,6 +31,8 @@
     "typescript": "^3.9.7"
   },
   "scripts": {
-    "lint": "eslint \"index.ts\" \"test/**.ts\""
+    "lint": "eslint \"index.ts\" \"test/**.ts\"",
+    "jest": "jest --forceExit --runInBand",
+    "test": "yarn jest"
   }
 }
