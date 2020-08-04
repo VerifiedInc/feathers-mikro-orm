@@ -1,0 +1,63 @@
+version: 2.1
+
+jobs:
+  lint:
+    docker:
+      - image: circleci/node:12.7.0
+    steps:
+      - checkout
+      - restore_cache:
+          key: yarn-v1-{{ checksum "yarn.lock" }}--{{ arch }}
+
+      - restore_cache:
+          key: node-v1-{{ checksum "package.json" }}--{{ arch }}
+
+      - run: yarn install
+
+      - save_cache:
+          key: yarn-v1-{{ checksum "yarn.lock" }}--{{ arch }}
+          paths:
+            - .cache/yarn
+
+      - save_cache:
+          key: node-v1-{{ checksum "package.json" }}--{{ arch }}
+          paths:
+            - node_modules
+
+      - run: yarn lint
+
+  test:
+    docker:
+      - image: circleci/node:12.7.0
+      - image: circleci/postgres:9.6.5-alpine-ram
+    steps:
+      - checkout
+      - restore_cache:
+          key: yarn-v1-{{ checksum "yarn.lock" }}--{{ arch }}
+
+      - restore_cache:
+          key: node-v1-{{ checksum "package.json" }}--{{ arch }}
+
+      - run: yarn install
+
+      - save_cache:
+          key: yarn-v1-{{ checksum "yarn.lock" }}--{{ arch }}
+          paths:
+            - .cache/yarn
+
+      - save_cache:
+          key: node-v1-{{ checksum "package.json" }}--{{ arch }}
+          paths:
+            - node_modules
+
+      - run:
+          name: Jest Tests
+          command: yarn test
+
+workflows:
+  lint-and-test:
+    jobs:
+        - lint
+        - test:
+            requires:
+                - lint
