@@ -2,7 +2,7 @@
   "parser": "@typescript-eslint/parser",
   "plugins": ["@typescript-eslint", "import"],
   "extends": [
-    "airbnb/base",
+    "semistandard",
     "plugin:@typescript-eslint/eslint-recommended",
     "plugin:@typescript-eslint/recommended"
   ],
@@ -21,8 +21,9 @@
     }
   },
   "rules": {
-    "class-methods-use-this": "off",
-    "import/prefer-default-export": "off",
-    "implicit-arrow-linebreak": "off"
+    "import/extensions": ["error", "ignorePackages", {
+      "js": "never",
+      "ts": "never"
+    }]
   }
 }

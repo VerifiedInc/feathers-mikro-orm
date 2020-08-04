@@ -19,18 +19,18 @@ export class MikroOrmService extends AdapterService<any> {
 
   private name: string;
 
-  constructor(options: MikroOrmServiceOptions) {
+  constructor (options: MikroOrmServiceOptions) {
     super(options);
     this.Entity = options.Entity;
     this.repository = options.repository;
     this.name = options.name;
   }
 
-  setup(app: any): void {
+  setup (app: any): void {
     this.app = app;
   }
 
-  async get(id: NullableId, params?: Params): Promise<AnyEntity<any>> {
+  async get (id: NullableId, params?: Params): Promise<AnyEntity<any>> {
     const where = params && (params.where || (params.query && params.query.where));
     const entity = await this.repository.findOne(id || where);
 
@@ -41,7 +41,7 @@ export class MikroOrmService extends AdapterService<any> {
     return entity;
   }
 
-  async find(params?: Params): Promise<AnyEntity<any>[]> {
+  async find (params?: Params): Promise<AnyEntity<any>[]> {
     if (!params) {
       return this.repository.findAll();
     }
@@ -49,13 +49,13 @@ export class MikroOrmService extends AdapterService<any> {
     return entities;
   }
 
-  async create(data: Partial<AnyEntity<any>>, params?: Params): Promise<AnyEntity<any>> {
+  async create (data: Partial<AnyEntity<any>>, params?: Params): Promise<AnyEntity<any>> {
     const entity = new this.Entity(data);
     await this.repository.persistAndFlush(entity);
     return entity;
   }
 
-  async patch(id: Id, data: Partial<AnyEntity<any>>, params?: Params): Promise<AnyEntity<any>> {
+  async patch (id: Id, data: Partial<AnyEntity<any>>, params?: Params): Promise<AnyEntity<any>> {
     const where = params?.where || id;
     const entity = await this.repository.findOne(where);
 
@@ -68,7 +68,7 @@ export class MikroOrmService extends AdapterService<any> {
     return entity;
   }
 
-  async remove(id: Id, params?: Params): Promise<AnyEntity<any>> {
+  async remove (id: Id, params?: Params): Promise<AnyEntity<any>> {
     const where = params?.where || id;
     const entity = await this.repository.findOne(where);
 

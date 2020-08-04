@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.MikroOrmService = void 0;
 const adapter_commons_1 = require("@feathersjs/adapter-commons");
 const errors_1 = require("@feathersjs/errors");
 class MikroOrmService extends adapter_commons_1.AdapterService {
@@ -33,8 +34,7 @@ class MikroOrmService extends adapter_commons_1.AdapterService {
         return entity;
     }
     async patch(id, data, params) {
-        var _a;
-        const where = ((_a = params) === null || _a === void 0 ? void 0 : _a.where) || id;
+        const where = (params === null || params === void 0 ? void 0 : params.where) || id;
         const entity = await this.repository.findOne(where);
         if (!entity) {
             throw new errors_1.NotFound(`cannot patch ${this.name}, entity not found`);
@@ -44,8 +44,7 @@ class MikroOrmService extends adapter_commons_1.AdapterService {
         return entity;
     }
     async remove(id, params) {
-        var _a;
-        const where = ((_a = params) === null || _a === void 0 ? void 0 : _a.where) || id;
+        const where = (params === null || params === void 0 ? void 0 : params.where) || id;
         const entity = await this.repository.findOne(where);
         if (!entity) {
             throw new errors_1.NotFound(`cannot remove ${this.name}, entity not found`);
