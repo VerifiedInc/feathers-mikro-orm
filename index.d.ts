@@ -13,11 +13,11 @@ export declare class MikroOrmService<EntityType extends AnyEntity> extends Adapt
     private name;
     constructor(options: MikroOrmServiceOptions<EntityType>);
     setup(app: Application): void;
-    get(id: NullableId, params?: Params): Promise<EntityType>;
-    find(params?: Params): Promise<EntityType[]>;
-    create(data: Partial<EntityType>, params?: Params): Promise<EntityType>;
-    patch(id: Id, data: Partial<EntityType>, params?: Params): Promise<EntityType>;
-    remove(id: Id, params?: Params): Promise<EntityType>;
+    _get(id: NullableId, params?: Params): Promise<EntityType>;
+    _find(params?: Params): Promise<EntityType[]>;
+    _create(data: Partial<EntityType>, params?: Params): Promise<EntityType>;
+    _patch(id: NullableId, data: Partial<EntityType>, params?: Params): Promise<EntityType>;
+    _remove(id: Id, params?: Params): Promise<EntityType>;
 }
 export default function createService<EntityType extends AnyEntity>(options: MikroOrmServiceOptions<EntityType>): MikroOrmService<EntityType>;
 export {};

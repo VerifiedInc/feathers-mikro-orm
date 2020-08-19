@@ -29,7 +29,7 @@ export class MikroOrmService<EntityType extends AnyEntity> extends AdapterServic
     this.app = app;
   }
 
-  async get (id: NullableId, params?: Params): Promise<EntityType> {
+  async _get (id: NullableId, params?: Params): Promise<EntityType> {
     const where = params && (params.where || (params.query && params.query.where));
     const entity = await this.repository.findOne(id || where);
 
@@ -40,7 +40,7 @@ export class MikroOrmService<EntityType extends AnyEntity> extends AdapterServic
     return entity;
   }
 
-  async find (params?: Params): Promise<EntityType[]> {
+  async _find (params?: Params): Promise<EntityType[]> {
     if (!params) {
       return this.repository.findAll();
     }
@@ -48,13 +48,13 @@ export class MikroOrmService<EntityType extends AnyEntity> extends AdapterServic
     return entities;
   }
 
-  async create (data: Partial<EntityType>, params?: Params): Promise<EntityType> {
+  async _create (data: Partial<EntityType>, params?: Params): Promise<EntityType> {
     const entity = new this.Entity(data);
     await this.repository.persistAndFlush(entity);
     return entity;
   }
 
-  async patch (id: Id, data: Partial<EntityType>, params?: Params): Promise<EntityType> {
+  async _patch (id: NullableId, data: Partial<EntityType>, params?: Params): Promise<EntityType> {
     const where = params?.where || id;
     const entity = await this.repository.findOne(where);
 
@@ -67,7 +67,7 @@ export class MikroOrmService<EntityType extends AnyEntity> extends AdapterServic
     return entity;
   }
 
-  async remove (id: Id, params?: Params): Promise<EntityType> {
+  async _remove (id: Id, params?: Params): Promise<EntityType> {
     const where = params?.where || id;
     const entity = await this.repository.findOne(where);
 

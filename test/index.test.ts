@@ -32,7 +32,9 @@ describe('feathers-mikro-orm', () => {
     describe('create', () => {
       it('creates a book', async () => {
         const bookOpts = { title: 'test title' };
-        const book = await service.create(bookOpts);
+        const result = await service.create(bookOpts);
+        const book = Array.isArray(result) ? result[0] : result;
+
         expect(book).toBeDefined();
         expect(book.uuid).toBeDefined();
         expect(book.title).toEqual(bookOpts.title);
@@ -40,7 +42,8 @@ describe('feathers-mikro-orm', () => {
 
       it('saves the created book in the database', async () => {
         const bookOpts = { title: 'test title' };
-        const book = await service.create(bookOpts);
+        const result = await service.create(bookOpts);
+        const book = Array.isArray(result) ? result[0] : result;
         const savedBook = await service.get(book.uuid);
         expect(savedBook).toBeDefined();
         expect(savedBook).toEqual(book);
@@ -51,7 +54,8 @@ describe('feathers-mikro-orm', () => {
       const bookOpts = { title: 'test title' };
       let uuid: string;
       beforeEach(async () => {
-        const createdBook = await service.create(bookOpts);
+        const result = await service.create(bookOpts);
+        const createdBook = Array.isArray(result) ? result[0] : result;
         uuid = createdBook.uuid;
       });
 
@@ -62,13 +66,13 @@ describe('feathers-mikro-orm', () => {
 
       it('gets books by where param if id passed is null', async () => {
         const params = { where: { title: 'test title' } };
-        const book = service.get(null, params);
+        const book = service._get(null, params);
         expect(book).toBeDefined();
       });
 
       it('gets books by where query param if id passed is null', async () => {
         const params = { query: { where: { title: 'test title' } } };
-        const book = service.get(null, params);
+        const book = service._get(null, params);
         expect(book).toBeDefined();
       });
 
@@ -92,14 +96,17 @@ describe('feathers-mikro-orm', () => {
       });
 
       it('finds all created books if no params are passed', async () => {
-        const books = await service.find();
+        const result = await service.find();
+        const books = Array.isArray(result) ? result : result.data;
         expect(books.length).toEqual(2);
       });
 
       it('finds books by where param', async () => {
         const params = { where: { title: opts1.title } };
-        const books = await service.find(params);
+        const result = await service.find(params);
+        const books = Array.isArray(result) ? result : result.data;
         expect(books.length).toEqual(1);
+
         expect(books[0].title).toEqual(params.where.title);
       });
     });

@@ -13,7 +13,7 @@ class MikroOrmService extends adapter_commons_1.AdapterService {
     setup(app) {
         this.app = app;
     }
-    async get(id, params) {
+    async _get(id, params) {
         const where = params && (params.where || (params.query && params.query.where));
         const entity = await this.repository.findOne(id || where);
         if (!entity) {
@@ -21,19 +21,19 @@ class MikroOrmService extends adapter_commons_1.AdapterService {
         }
         return entity;
     }
-    async find(params) {
+    async _find(params) {
         if (!params) {
             return this.repository.findAll();
         }
         const entities = await this.repository.find(params.where, params.options);
         return entities;
     }
-    async create(data, params) {
+    async _create(data, params) {
         const entity = new this.Entity(data);
         await this.repository.persistAndFlush(entity);
         return entity;
     }
-    async patch(id, data, params) {
+    async _patch(id, data, params) {
         const where = (params === null || params === void 0 ? void 0 : params.where) || id;
         const entity = await this.repository.findOne(where);
         if (!entity) {
@@ -43,7 +43,7 @@ class MikroOrmService extends adapter_commons_1.AdapterService {
         await this.repository.persistAndFlush(entity);
         return entity;
     }
-    async remove(id, params) {
+    async _remove(id, params) {
         const where = (params === null || params === void 0 ? void 0 : params.where) || id;
         const entity = await this.repository.findOne(where);
         if (!entity) {
