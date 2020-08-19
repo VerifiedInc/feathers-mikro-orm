@@ -17,7 +17,7 @@ describe('feathers-mikro-orm', () => {
   });
 
   describe('the book service', () => {
-    let service: MikroOrmService;
+    let service: MikroOrmService<Book>;
 
     beforeAll(() => {
       service = app.service('book');

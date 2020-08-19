@@ -54,7 +54,7 @@ class MikroOrmService extends adapter_commons_1.AdapterService {
     }
 }
 exports.MikroOrmService = MikroOrmService;
-function default_1(options) {
+function createService(options) {
     return new MikroOrmService(options);
 }
-exports.default = default_1;
+exports.default = createService;
