@@ -52,6 +52,21 @@ class MikroOrmService extends adapter_commons_1.AdapterService {
         await this.repository.removeAndFlush(entity);
         return entity;
     }
+    async get(id, params) {
+        return await this._get(id, params);
+    }
+    async find(params) {
+        return await this._find(params);
+    }
+    async create(data, params) {
+        return await this._create(data, params);
+    }
+    async patch(id, data, params) {
+        return await this._patch(id, data, params);
+    }
+    async remove(id, params) {
+        return await this._remove(id, params);
+    }
 }
 exports.MikroOrmService = MikroOrmService;
 function createService(options) {

@@ -1,6 +1,6 @@
 import { AdapterService, ServiceOptions } from '@feathersjs/adapter-commons';
 import { NotFound } from '@feathersjs/errors';
-import { Id, NullableId, Params, Application } from '@feathersjs/feathers';
+import { Id, NullableId, Params, Application, Paginated } from '@feathersjs/feathers';
 import { EntityRepository, AnyEntity, Constructor } from 'mikro-orm';
 
 interface MikroOrmServiceOptions<EntityType> extends Partial<ServiceOptions> {
@@ -40,7 +40,7 @@ export class MikroOrmService<EntityType extends AnyEntity> extends AdapterServic
     return entity;
   }
 
-  async _find (params?: Params): Promise<EntityType[]> {
+  async _find (params?: Params): Promise<EntityType[] | Paginated<EntityType>> {
     if (!params) {
       return this.repository.findAll();
     }
@@ -54,7 +54,7 @@ export class MikroOrmService<EntityType extends AnyEntity> extends AdapterServic
     return entity;
   }
 
-  async _patch (id: NullableId, data: Partial<EntityType>, params?: Params): Promise<EntityType> {
+  async _patch (id: NullableId, data: Partial<EntityType>, params?: Params): Promise<EntityType | EntityType[]> {
     const where = params?.where || id;
     const entity = await this.repository.findOne(where);
 
@@ -67,7 +67,7 @@ export class MikroOrmService<EntityType extends AnyEntity> extends AdapterServic
     return entity;
   }
 
-  async _remove (id: Id, params?: Params): Promise<EntityType> {
+  async _remove (id: NullableId, params?: Params): Promise<EntityType | EntityType[]> {
     const where = params?.where || id;
     const entity = await this.repository.findOne(where);
 
@@ -77,6 +77,26 @@ export class MikroOrmService<EntityType extends AnyEntity> extends AdapterServic
 
     await this.repository.removeAndFlush(entity);
     return entity;
+  }
+
+  async get (id: NullableId, params?: Params): Promise<EntityType> {
+    return await this._get(id, params);
+  }
+
+  async find (params?: Params): Promise<EntityType[] | Paginated<EntityType>> {
+    return await this._find(params);
+  }
+
+  async create (data: Partial<EntityType>, params?: Params): Promise<EntityType> {
+    return await this._create(data, params);
+  }
+
+  async patch (id: NullableId, data: Partial<EntityType>, params?: Params): Promise<EntityType | EntityType[]> {
+    return await this._patch(id, data, params);
+  }
+
+  async remove (id: NullableId, params?: Params): Promise<EntityType | EntityType[]> {
+    return await this._remove(id, params);
   }
 }
 
