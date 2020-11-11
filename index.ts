@@ -68,16 +68,10 @@ export class MikroOrmService extends AdapterService<any> {
     return entity;
   }
 
-  async remove (id: NullableId, params?: Params): Promise<AnyEntity<any>> {
+  async remove (id: NullableId, params?: Params): Promise<void> {
     const where = params?.where || id;
-    const entity = await this.repository.findOne(where);
 
-    if (!entity) {
-      throw new NotFound(`cannot remove ${this.name}, entity not found`);
-    }
-
-    await this.repository.removeAndFlush(entity);
-    return entity;
+    await this.repository.remove(where, true);
   }
 }
 
