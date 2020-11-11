@@ -68,10 +68,12 @@ export class MikroOrmService extends AdapterService<any> {
     return entity;
   }
 
-  async remove (id: NullableId, params?: Params): Promise<void> {
+  async remove (id: NullableId, params?: Params): Promise<{ success: boolean }> {
     const where = params?.where || id;
 
     await this.repository.remove(where, true);
+
+    return { success: true };
   }
 }
 
