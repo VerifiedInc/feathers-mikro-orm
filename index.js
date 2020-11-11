@@ -46,6 +46,7 @@ class MikroOrmService extends adapter_commons_1.AdapterService {
     async remove(id, params) {
         const where = (params === null || params === void 0 ? void 0 : params.where) || id;
         await this.repository.remove(where, true);
+        return { success: true };
     }
 }
 exports.MikroOrmService = MikroOrmService;
