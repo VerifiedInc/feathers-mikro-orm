@@ -45,12 +45,7 @@ class MikroOrmService extends adapter_commons_1.AdapterService {
     }
     async remove(id, params) {
         const where = (params === null || params === void 0 ? void 0 : params.where) || id;
-        const entity = await this.repository.findOne(where);
-        if (!entity) {
-            throw new errors_1.NotFound(`cannot remove ${this.name}, entity not found`);
-        }
-        await this.repository.removeAndFlush(entity);
-        return entity;
+        await this.repository.remove(where, true);
     }
 }
 exports.MikroOrmService = MikroOrmService;
