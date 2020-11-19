@@ -2,17 +2,19 @@
   "name": "feathers-mikro-orm",
   "version": "0.0.2",
   "description": "A service adapter for MikroORM",
-  "main": "build/index.js",
+  "main": "lib/index.js",
   "author": "jacobleesinger",
   "license": "MIT",
   "dependencies": {
-    "@feathersjs/adapter-commons": "^4.3.11",
-    "@feathersjs/errors": "^4.3.11",
-    "@feathersjs/feathers": "^4.3.11",
-    "mikro-orm": "^3.6.9",
+    "@feathersjs/adapter-commons": "^4.5.7",
+    "@feathersjs/errors": "^4.5.10",
+    "@feathersjs/feathers": "^4.5.10",
+    "@mikro-orm/core": "^4.3.0",
     "uuid": "^8.3.0"
   },
   "devDependencies": {
+    "@mikro-orm/postgresql": "^4.3.0",
+    "@mikro-orm/reflection": "^4.3.0",
     "@types/jest": "^26.0.8",
     "@types/uuid": "^8.0.0",
     "@typescript-eslint/eslint-plugin": "^2.7.0",
@@ -31,7 +33,7 @@
     "typescript": "^3.9.7"
   },
   "scripts": {
-    "lint": "eslint \"index.ts\" \"test/**.ts\"",
+    "lint": "eslint \"src/**.ts\" \"test/**.ts\"",
     "jest": "jest --forceExit --runInBand",
     "test": "yarn jest"
   }
