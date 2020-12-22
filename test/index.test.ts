@@ -55,6 +55,28 @@ describe('feathers-mikro-orm', () => {
       });
     });
 
+    describe('find', () => {
+      it('finds by params.query if params.where is not set', async () => {
+        const options = { title: 'test' };
+        const options2 = { title: 'another' };
+        const initial = await service.create(options);
+        await service.create(options2);
+        const saved = await service.find({ query: { title: 'test' } });
+        expect(saved.length).toEqual(1);
+        expect(saved[0]).toEqual(initial);
+      });
+
+      it('handles $limit query param', async () => {
+        const options = { title: 'test' };
+        const options2 = { title: 'test' };
+        const initial = await service.create(options);
+        await service.create(options2);
+        const saved = await service.find({ query: { title: 'test', $limit: 1 } });
+        expect(saved.length).toEqual(1);
+        expect(saved[0]).toEqual(initial);
+      });
+    });
+
     describe('patch', () => {
       it('updates a saved book by id', async () => {
         const options = { title: 'test' };

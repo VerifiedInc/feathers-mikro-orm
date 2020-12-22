@@ -41,7 +41,20 @@ export class Service extends AdapterService {
       return this.repository.findAll();
     }
 
-    return this.repository.find(params.where, params.options);
+    const where = params.where
+      ? { ...params.where }
+      : params.query
+        ? { ...params.query }
+        : {};
+
+    const options = params.options ? { ...params.options } : {};
+
+    if (where.$limit) {
+      options.limit = where.$limit;
+      delete where.$limit;
+    }
+
+    return this.repository.find(where, options);
   }
 
   async create (data: Partial<AnyEntity>, params?: Params): Promise<any> {
