@@ -65,6 +65,9 @@ export class MikroOrmService extends AdapterService<any> {
 
     entity.assign(data);
     await this.repository.persistAndFlush(entity);
+
+    // clear the identity map so that clients don't accidentally receive un-updated entity
+    this.app.mikro.em.clear();
     return entity;
   }
 
