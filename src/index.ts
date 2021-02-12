@@ -1,7 +1,6 @@
-import { AdapterService, ServiceOptions, InternalServiceMethods } from '@feathersjs/adapter-commons';
+import { AdapterService, ServiceOptions } from '@feathersjs/adapter-commons';
 import { NullableId, Params } from '@feathersjs/feathers';
-import { AnyEntity, EntityRepository, MikroORM, Entity, wrap } from '@mikro-orm/core';
-import { EntityClass, EntityName, EntityRepositoryType } from '@mikro-orm/core/typings';
+import { AnyEntity, EntityRepository, MikroORM, wrap } from '@mikro-orm/core';
 import { NotFound } from '@feathersjs/errors';
 
 interface MikroOrmServiceOptions extends Partial<ServiceOptions> {
@@ -77,13 +76,13 @@ export class Service extends AdapterService {
     return entity;
   }
 
-  async remove (id: NullableId, params?: Params): Promise<{ success: boolean }> {
+  async remove (id: NullableId, params?: Params): Promise<any> {
     const where = params?.where || id;
     const entity = await this.get(where);
     // await this.orm.em.nativeDelete(this.Entity, where);
     // await this.orm.em.flush();
     await this.repository.removeAndFlush(entity);
-    return { success: true };
+    return entity;
   }
 }
 
