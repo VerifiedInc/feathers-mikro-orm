@@ -9,12 +9,12 @@
     "@feathersjs/adapter-commons": "^4.5.7",
     "@feathersjs/errors": "^4.5.10",
     "@feathersjs/feathers": "^4.5.10",
-    "@mikro-orm/core": "^4.3.0",
+    "@mikro-orm/core": "^4.4.2",
     "uuid": "^8.3.0"
   },
   "devDependencies": {
-    "@mikro-orm/postgresql": "^4.3.0",
-    "@mikro-orm/reflection": "^4.3.0",
+    "@mikro-orm/postgresql": "^4.4.2",
+    "@mikro-orm/reflection": "^4.4.2",
     "@types/jest": "^26.0.8",
     "@types/uuid": "^8.0.0",
     "@typescript-eslint/eslint-plugin": "^2.7.0",
