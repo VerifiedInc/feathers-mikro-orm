@@ -1,8 +1,6 @@
 import { Application } from '@feathersjs/feathers';
-import { EntityClass } from '@mikro-orm/core/typings';
 import { setupApp } from './app';
-import { Book } from './entities/Book';
-import createService, { Service } from '../src';
+import { Service } from '../src';
 import { NotFound } from '@feathersjs/errors';
 
 describe('feathers-mikro-orm', () => {
@@ -102,6 +100,14 @@ describe('feathers-mikro-orm', () => {
         } catch (e) {
           expect(e).toEqual(new NotFound('Book not found.'));
         }
+      });
+
+      it('returns the deleted book', async () => {
+        const options = { title: 'test' };
+        const initial = await service.create(options);
+
+        const removed = await service.remove(initial.uuid);
+        expect(removed).toEqual(initial);
       });
     });
   });
