@@ -1,13 +1,13 @@
 import { Application } from '@feathersjs/feathers';
+import { EntityClass } from '@mikro-orm/core/typings';
+import { setupApp } from './app';
+import { Book } from './entities/Book';
+import createService, { Service } from '../src';
 import { NotFound } from '@feathersjs/errors';
-import { v4 } from 'uuid';
-
-import { setupApp } from './setupApp';
-import { Book } from './entities';
-import { MikroOrmService } from '../';
 
 describe('feathers-mikro-orm', () => {
   let app: Application;
+
   beforeAll(async () => {
     app = await setupApp();
   });
@@ -17,141 +17,90 @@ describe('feathers-mikro-orm', () => {
   });
 
   describe('the book service', () => {
-    let service: MikroOrmService;
+    let service: Service;
 
     beforeAll(() => {
       service = app.service('book');
     });
 
-    beforeEach(async () => {
-      const mikro = app.get('mikro');
-      const connection = mikro.em.getConnection();
-      await connection.execute('DELETE FROM "book";');
+    afterEach(async () => {
+      const orm = app.get('orm');
+      const connection = orm.em.getConnection();
+      await connection.execute('DELETE FROM book;');
     });
 
     describe('create', () => {
       it('creates a book', async () => {
-        const bookOpts = { title: 'test title' };
-        const book = await service.create(bookOpts);
+        const options = { title: 'test' };
+        const book = await service.create(options);
         expect(book).toBeDefined();
         expect(book.uuid).toBeDefined();
-        expect(book.title).toEqual(bookOpts.title);
+        expect(book.title).toEqual(options.title);
       });
 
-      it('saves the created book in the database', async () => {
-        const bookOpts = { title: 'test title' };
-        const book = await service.create(bookOpts);
+      it('saves the created book', async () => {
+        const options = { title: 'test' };
+        const book = await service.create(options);
         const savedBook = await service.get(book.uuid);
-        expect(savedBook).toBeDefined();
         expect(savedBook).toEqual(book);
       });
     });
 
     describe('get', () => {
-      const bookOpts = { title: 'test title' };
-      let uuid: string;
-      beforeEach(async () => {
-        const createdBook = await service.create(bookOpts);
-        uuid = createdBook.uuid;
-      });
-
-      it('gets a created book by id', async () => {
-        const book = await service.get(uuid);
-        expect(book).toBeDefined();
-      });
-
-      it('gets books by where param if id passed is null', async () => {
-        const params = { where: { title: 'test title' } };
-        const book = service.get(null, params);
-        expect(book).toBeDefined();
-      });
-
-      it('gets books by where query param if id passed is null', async () => {
-        const params = { query: { where: { title: 'test title' } } };
-        const book = service.get(null, params);
-        expect(book).toBeDefined();
-      });
-
-      it('throws a NotFound error if no book is found', async () => {
-        try {
-          await service.get(v4());
-          fail('expected to throw.');
-        } catch (e) {
-          expect(e).toBeInstanceOf(NotFound);
-        }
+      it('gets a saved book by id', async () => {
+        const options = { title: 'test' };
+        const initial = await service.create(options);
+        const saved = await service.get(initial.uuid);
+        expect(saved).toEqual(initial);
       });
     });
 
     describe('find', () => {
-      const opts1 = { title: 'test title 1' };
-      const opts2 = { title: 'test title 2' };
-
-      beforeEach(async () => {
-        await service.create(opts1);
-        await service.create(opts2);
+      it('finds by params.query if params.where is not set', async () => {
+        const options = { title: 'test' };
+        const options2 = { title: 'another' };
+        const initial = await service.create(options);
+        await service.create(options2);
+        const saved = await service.find({ query: { title: 'test' } });
+        expect(saved.length).toEqual(1);
+        expect(saved[0]).toEqual(initial);
       });
 
-      it('finds all created books if no params are passed', async () => {
-        const books = await service.find();
-        expect(books.length).toEqual(2);
-      });
-
-      it('finds books by where param', async () => {
-        const params = { where: { title: opts1.title } };
-        const books = await service.find(params);
-        expect(books.length).toEqual(1);
-        expect(books[0].title).toEqual(params.where.title);
+      it('handles $limit query param', async () => {
+        const options = { title: 'test' };
+        const options2 = { title: 'test' };
+        const initial = await service.create(options);
+        await service.create(options2);
+        const saved = await service.find({ query: { title: 'test', $limit: 1 } });
+        expect(saved.length).toEqual(1);
+        expect(saved[0]).toEqual(initial);
       });
     });
 
     describe('patch', () => {
-      const opts = { title: 'test title' };
-      let book: Book;
+      it('updates a saved book by id', async () => {
+        const options = { title: 'test' };
+        const initial = await service.create(options);
+        const patched = await service.patch(initial.uuid, { title: 'updated' });
+        expect(patched.title).toEqual('updated');
 
-      beforeEach(async () => {
-        book = await service.create(opts) as Book;
-      });
-
-      it('patches a book by id', async () => {
-        await service.patch(book.uuid, { title: 'updated title' });
-        const updatedBook = await service.get(book.uuid);
-        expect(updatedBook.title).toEqual('updated title');
-      });
-
-      it('throws a NotFound error if the book to patch is not found', async () => {
-        try {
-          await service.patch(v4(), { title: 'updated title' });
-          fail('expected to throw.');
-        } catch (e) {
-          expect(e).toBeInstanceOf(NotFound);
-        }
+        const saved = await service.get(initial.uuid);
+        expect(saved).toEqual(patched);
       });
     });
 
     describe('remove', () => {
-      const opts = { title: 'test title' };
-      let book: Book;
+      it('deletes a saved book by id', async () => {
+        const options = { title: 'test' };
+        const initial = await service.create(options);
 
-      beforeEach(async () => {
-        book = await service.create(opts) as Book;
-      });
-
-      it('removes a book by uuid', async () => {
-        await service.remove(book.uuid);
+        await service.remove(initial.uuid);
 
         try {
-          await service.get(book.uuid);
+          await service.get(initial.uuid);
+          fail();
         } catch (e) {
-          expect(e).toBeInstanceOf(NotFound);
-        }
-      });
-
-      it('throws a NotFound if the book to delete is not found', async () => {
-        try {
-          await service.remove(v4());
-          fail('expected to throw.');
-        } catch (e) {
-          expect(e).toBeInstanceOf(NotFound);
+          expect(e).toEqual(new NotFound('Book not found.'));
         }
       });
     });
