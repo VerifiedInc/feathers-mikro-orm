@@ -5,7 +5,6 @@ import { TsMorphMetadataProvider } from '@mikro-orm/reflection';
 import createService from '../src/';
 import { Book } from './entities/Book';
 import { BaseEntity } from './entities/BaseEntity';
-import { EntityClass } from '@mikro-orm/core/typings';
 
 export async function setupApp (): Promise<Application> {
   const app = feathers();
@@ -31,7 +30,6 @@ export async function setupApp (): Promise<Application> {
 
   const bookService = createService({
     Entity: Book,
-    name: 'Book',
     orm
   });
 

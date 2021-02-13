@@ -1,29 +1,30 @@
 import { AdapterService, ServiceOptions } from '@feathersjs/adapter-commons';
 import { NullableId, Params } from '@feathersjs/feathers';
-import { AnyEntity, EntityRepository, MikroORM, wrap } from '@mikro-orm/core';
+import { EntityRepository, MikroORM, wrap, Utils } from '@mikro-orm/core';
 import { NotFound } from '@feathersjs/errors';
 
-interface MikroOrmServiceOptions extends Partial<ServiceOptions> {
-  Entity: AnyEntity;
+interface MikroOrmServiceOptions<T> extends Partial<ServiceOptions> {
+  Entity: T;
   orm: MikroORM;
-  name: string;
 }
 
-export class Service extends AdapterService {
+export class Service<T> extends AdapterService {
   protected orm: MikroORM;
-  protected Entity: any;
-  protected repository: EntityRepository<any>;
+  protected Entity: T;
+  protected repository: EntityRepository<T>;
   protected name: string;
 
-  constructor (options: MikroOrmServiceOptions) {
+  constructor (options: MikroOrmServiceOptions<T>) {
+    const { orm, Entity } = options;
     super(options);
-    this.Entity = options.Entity;
-    this.orm = options.orm;
-    this.repository = this.orm.em.getRepository(options.name);
-    this.name = options.name;
+    this.Entity = Entity;
+    this.orm = orm;
+    const name = Utils.className(Entity as any);
+    this.repository = this.orm.em.getRepository<T, EntityRepository<T>>(name) as EntityRepository<T>;
+    this.name = name;
   }
 
-  async get (id: NullableId, params?: Params): Promise<any> {
+  async get (id: NullableId, params?: Params): Promise<T> {
     const where = params?.where || params?.query?.where;
 
     const entity = await this.orm.em.findOne(this.name, id || where);
@@ -35,7 +36,7 @@ export class Service extends AdapterService {
     return entity;
   }
 
-  async find (params?: Params): Promise<any[]> {
+  async find (params?: Params): Promise<T[]> {
     if (!params) {
       return this.repository.findAll();
     }
@@ -56,14 +57,14 @@ export class Service extends AdapterService {
     return this.repository.find(where, options);
   }
 
-  async create (data: Partial<AnyEntity>, params?: Params): Promise<any> {
-    const entity = new this.Entity(data);
+  async create (data: Partial<T>, params?: Params): Promise<T> {
+    const entity = new (this.Entity as any)(data);
 
     await this.repository.persistAndFlush(entity);
     return entity;
   }
 
-  async patch (id: NullableId, data: Partial<AnyEntity>, params?: Params): Promise<any> {
+  async patch (id: NullableId, data: Partial<T>, params?: Params): Promise<T> {
     const where = params?.where || id;
     const entity = await this.repository.findOne(where);
 
@@ -76,7 +77,7 @@ export class Service extends AdapterService {
     return entity;
   }
 
-  async remove (id: NullableId, params?: Params): Promise<any> {
+  async remove (id: NullableId, params?: Params): Promise<T> {
     const where = params?.where || id;
     const entity = await this.get(where);
     // await this.orm.em.nativeDelete(this.Entity, where);
@@ -86,6 +87,6 @@ export class Service extends AdapterService {
   }
 }
 
-export default function (options: MikroOrmServiceOptions): Service {
+export default function<T> (options: MikroOrmServiceOptions<T>): Service<T> {
   return new Service(options);
 }
