@@ -1,11 +1,11 @@
 import { AdapterService, ServiceOptions } from '@feathersjs/adapter-commons';
 import { NullableId, Params } from '@feathersjs/feathers';
 import { EntityRepository, MikroORM } from '@mikro-orm/core';
-interface MikroOrmServiceOptions<T> extends Partial<ServiceOptions> {
+interface MikroOrmServiceOptions<T = any> extends Partial<ServiceOptions> {
     Entity: T;
     orm: MikroORM;
 }
-export declare class Service<T> extends AdapterService {
+export declare class Service<T = any> extends AdapterService {
     protected orm: MikroORM;
     protected Entity: T;
     protected repository: EntityRepository<T>;
@@ -17,5 +17,5 @@ export declare class Service<T> extends AdapterService {
     patch(id: NullableId, data: Partial<T>, params?: Params): Promise<T>;
     remove(id: NullableId, params?: Params): Promise<T>;
 }
-export default function <T>(options: MikroOrmServiceOptions<T>): Service<T>;
+export default function <T = any>(options: MikroOrmServiceOptions<T>): Service<T>;
 export {};

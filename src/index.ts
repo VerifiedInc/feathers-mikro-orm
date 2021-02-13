@@ -3,12 +3,12 @@ import { NullableId, Params } from '@feathersjs/feathers';
 import { EntityRepository, MikroORM, wrap, Utils } from '@mikro-orm/core';
 import { NotFound } from '@feathersjs/errors';
 
-interface MikroOrmServiceOptions<T> extends Partial<ServiceOptions> {
+interface MikroOrmServiceOptions<T = any> extends Partial<ServiceOptions> {
   Entity: T;
   orm: MikroORM;
 }
 
-export class Service<T> extends AdapterService {
+export class Service<T = any> extends AdapterService {
   protected orm: MikroORM;
   protected Entity: T;
   protected repository: EntityRepository<T>;
@@ -87,6 +87,6 @@ export class Service<T> extends AdapterService {
   }
 }
 
-export default function<T> (options: MikroOrmServiceOptions<T>): Service<T> {
+export default function<T = any> (options: MikroOrmServiceOptions<T>): Service<T> {
   return new Service(options);
 }
