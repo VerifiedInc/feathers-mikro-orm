@@ -4,13 +4,13 @@ import { EntityRepository, MikroORM, wrap, Utils } from '@mikro-orm/core';
 import { NotFound } from '@feathersjs/errors';
 
 interface MikroOrmServiceOptions<T = any> extends Partial<ServiceOptions> {
-  Entity: T;
+  Entity: new (...args: any[]) => T; // constructor for instances of T
   orm: MikroORM;
 }
 
 export class Service<T = any> extends AdapterService {
   protected orm: MikroORM;
-  protected Entity: T;
+  protected Entity: new (...args: any[]) => T;
   protected repository: EntityRepository<T>;
   protected name: string;
 
@@ -19,7 +19,7 @@ export class Service<T = any> extends AdapterService {
     super(options);
     this.Entity = Entity;
     this.orm = orm;
-    const name = Utils.className(Entity as any);
+    const name = Utils.className(Entity);
     this.repository = this.orm.em.getRepository<T, EntityRepository<T>>(name) as EntityRepository<T>;
     this.name = name;
   }
