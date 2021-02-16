@@ -2,12 +2,12 @@ import { AdapterService, ServiceOptions } from '@feathersjs/adapter-commons';
 import { NullableId, Params } from '@feathersjs/feathers';
 import { EntityRepository, MikroORM } from '@mikro-orm/core';
 interface MikroOrmServiceOptions<T = any> extends Partial<ServiceOptions> {
-    Entity: T;
+    Entity: new (...args: any[]) => T;
     orm: MikroORM;
 }
 export declare class Service<T = any> extends AdapterService {
     protected orm: MikroORM;
-    protected Entity: T;
+    protected Entity: new (...args: any[]) => T;
     protected repository: EntityRepository<T>;
     protected name: string;
     constructor(options: MikroOrmServiceOptions<T>);
