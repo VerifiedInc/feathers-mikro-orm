@@ -1,6 +1,6 @@
 import { AdapterService, ServiceOptions } from '@feathersjs/adapter-commons';
 import { NullableId, Params } from '@feathersjs/feathers';
-import { EntityRepository, MikroORM, wrap, Utils } from '@mikro-orm/core';
+import { EntityRepository, MikroORM, wrap, Utils, FilterQuery } from '@mikro-orm/core';
 import { NotFound } from '@feathersjs/errors';
 
 interface MikroOrmServiceOptions<T = any> extends Partial<ServiceOptions> {
@@ -80,8 +80,18 @@ export class Service<T = any> extends AdapterService {
   async remove (id: NullableId, params?: Params): Promise<T | { success: true }> {
     if (id) {
       // removing a single entity by id
-      const where = params?.where || id;
-      const entity = await this.get(where);
+
+      let entity: T;
+
+      try {
+        // repository methods often complain about argument types being incorrect even when they're not
+        // `string` and `number` types _should_ be assignable to `FilterQuery`, but they aren't.
+        // comment by package author/maintainer: https://github.com/mikro-orm/mikro-orm/issues/1405#issuecomment-775841265
+        entity = await this.repository.findOneOrFail(id as FilterQuery<T>);
+      } catch (e) {
+        throw new NotFound(`${this.name} not found.`);
+      }
+
       await this.repository.removeAndFlush(entity);
       return entity;
     } else {
