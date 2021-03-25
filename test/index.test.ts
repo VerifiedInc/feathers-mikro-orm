@@ -109,6 +109,20 @@ describe('feathers-mikro-orm', () => {
         const removed = await service.remove(initial.uuid);
         expect(removed).toEqual(initial);
       });
+
+      it('deletes many books by params', async () => {
+        const options1 = { title: 'test' };
+        const options2 = { title: 'test' };
+        await service.create(options1);
+        await service.create(options2);
+
+        const response = await service.remove(null, { where: { title: 'test' } });
+        expect(response).toEqual({ success: true });
+
+        // check that all of the books have been removed
+        const found = await service.find();
+        expect(found.length).toEqual(0);
+      });
     });
   });
 });
