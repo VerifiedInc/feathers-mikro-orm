@@ -102,6 +102,21 @@ describe('feathers-mikro-orm', () => {
         }
       });
 
+      it('ignores params when deleting by id', async () => {
+        const options = { title: 'test' };
+        const params = { query: {} };
+        const savedBook = await service.create(options);
+
+        await service.remove(savedBook.uuid, params);
+
+        try {
+          await service.get(savedBook.uuid);
+          fail();
+        } catch (e) {
+          expect(e).toEqual(new NotFound('Book not found.'));
+        }
+      });
+
       it('returns the deleted book', async () => {
         const options = { title: 'test' };
         const initial = await service.create(options);
