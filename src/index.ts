@@ -84,6 +84,9 @@ export class Service<T = any> extends AdapterService {
       let entity: T;
 
       try {
+        // repository methods often complain about argument types being incorrect even when they're not
+        // `string` and `number` types _should_ be assignable to `FilterQuery`, but they aren't.
+        // comment by package author/maintainer: https://github.com/mikro-orm/mikro-orm/issues/1405#issuecomment-775841265
         entity = await this.repository.findOneOrFail(id as FilterQuery<T>);
       } catch (e) {
         throw new NotFound(`${this.name} not found.`);
