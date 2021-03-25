@@ -15,7 +15,9 @@ export declare class Service<T = any> extends AdapterService {
     find(params?: Params): Promise<T[]>;
     create(data: Partial<T>, params?: Params): Promise<T>;
     patch(id: NullableId, data: Partial<T>, params?: Params): Promise<T>;
-    remove(id: NullableId, params?: Params): Promise<T>;
+    remove(id: NullableId, params?: Params): Promise<T | {
+        success: true;
+    }>;
 }
 export default function <T = any>(options: MikroOrmServiceOptions<T>): Service<T>;
 export {};

@@ -77,13 +77,19 @@ export class Service<T = any> extends AdapterService {
     return entity;
   }
 
-  async remove (id: NullableId, params?: Params): Promise<T> {
-    const where = params?.where || id;
-    const entity = await this.get(where);
-    // await this.orm.em.nativeDelete(this.Entity, where);
-    // await this.orm.em.flush();
-    await this.repository.removeAndFlush(entity);
-    return entity;
+  async remove (id: NullableId, params?: Params): Promise<T | { success: true }> {
+    if (id) {
+      // removing a single entity by id
+      const where = params?.where || id;
+      const entity = await this.get(where);
+      await this.repository.removeAndFlush(entity);
+      return entity;
+    } else {
+      // removing many entities by a query
+      await this.orm.em.nativeDelete(this.Entity, params?.where);
+      await this.orm.em.flush();
+      return { success: true };
+    }
   }
 }
 
