@@ -27,7 +27,7 @@ export class Service<T = any> extends AdapterService {
   async get (id: NullableId, params?: Params): Promise<T> {
     const where = params?.where || params?.query?.where;
 
-    const entity = await this.orm.em.findOne(this.name, id || where);
+    const entity = await this.orm.em.findOne(this.name, id || where, params?.populate);
 
     if (!entity) {
       throw new NotFound(`${this.name} not found.`);
@@ -38,7 +38,7 @@ export class Service<T = any> extends AdapterService {
 
   async find (params?: Params): Promise<T[]> {
     if (!params) {
-      return this.repository.findAll();
+      return this.repository.findAll(params);
     }
 
     const where = params.where
