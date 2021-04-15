@@ -40,7 +40,8 @@ describe('feathers-mikro-orm', () => {
         const options = { title: 'test' };
         const book = await service.create(options);
         const savedBook = await service.get(book.uuid);
-        expect(savedBook).toEqual(book);
+        expect(book.title).toEqual(savedBook.title);
+        expect(book.uuid).toEqual(savedBook.uuid);
       });
     });
 
@@ -49,7 +50,8 @@ describe('feathers-mikro-orm', () => {
         const options = { title: 'test' };
         const initial = await service.create(options);
         const saved = await service.get(initial.uuid);
-        expect(saved).toEqual(initial);
+        expect(initial.title).toEqual(saved.title);
+        expect(initial.uuid).toEqual(saved.uuid);
       });
     });
 
@@ -61,7 +63,8 @@ describe('feathers-mikro-orm', () => {
         await service.create(options2);
         const saved = await service.find({ query: { title: 'test' } });
         expect(saved.length).toEqual(1);
-        expect(saved[0]).toEqual(initial);
+        expect(saved[0].title).toEqual(initial.title);
+        expect(saved[0].uuid).toEqual(initial.uuid);
       });
 
       it('handles $limit query param', async () => {
@@ -71,7 +74,8 @@ describe('feathers-mikro-orm', () => {
         await service.create(options2);
         const saved = await service.find({ query: { title: 'test', $limit: 1 } });
         expect(saved.length).toEqual(1);
-        expect(saved[0]).toEqual(initial);
+        expect(saved[0].title).toEqual(initial.title);
+        expect(saved[0].uuid).toEqual(initial.uuid);
       });
     });
 
@@ -83,7 +87,8 @@ describe('feathers-mikro-orm', () => {
         expect(patched.title).toEqual('updated');
 
         const saved = await service.get(initial.uuid);
-        expect(saved).toEqual(patched);
+        expect(saved.title).toEqual(patched.title);
+        expect(saved.uuid).toEqual(patched.uuid);
       });
     });
 
@@ -122,7 +127,8 @@ describe('feathers-mikro-orm', () => {
         const initial = await service.create(options);
 
         const removed = await service.remove(initial.uuid);
-        expect(removed).toEqual(initial);
+        expect(removed.title).toEqual(initial.title);
+        expect(removed.uuid).toEqual(initial.uuid);
       });
 
       it('deletes many books by params', async () => {
