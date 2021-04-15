@@ -27,7 +27,8 @@ export class Service<T = any> extends AdapterService {
   async get (id: NullableId, params?: Params): Promise<T> {
     const where = params?.where || params?.query?.where;
 
-    const entity = await this.orm.em.findOne(this.name, id || where, params?.populate);
+    const em = this.orm.em.fork();
+    const entity = await em.findOne(this.name, id || where, params?.populate);
 
     if (!entity) {
       throw new NotFound(`${this.name} not found.`);
@@ -54,26 +55,33 @@ export class Service<T = any> extends AdapterService {
       delete where.$limit;
     }
 
-    return this.repository.find(where, options);
+    // return this.repository.find(where, options);
+    const em = this.orm.em.fork();
+    return em.find(this.Entity, where, options);
   }
 
   async create (data: Partial<T>, params?: Params): Promise<T> {
     const entity = new (this.Entity as any)(data);
 
-    await this.repository.persistAndFlush(entity);
+    // await this.repository.persistAndFlush(entity);
+    const em = this.orm.em.fork();
+    await em.persistAndFlush(entity);
     return entity;
   }
 
   async patch (id: NullableId, data: Partial<T>, params?: Params): Promise<T> {
     const where = params?.where || id;
-    const entity = await this.repository.findOne(where);
+    // const entity = await this.repository.findOne(where);
+    const em = this.orm.em.fork();
+    const entity = await em.findOne(this.Entity, where);
 
     if (!entity) {
       throw new NotFound(`cannot patch ${this.name}, entity not found`);
     }
 
     wrap(entity).assign(data);
-    await this.repository.persistAndFlush(entity);
+    // await this.repository.persistAndFlush(entity);
+    await em.persistAndFlush(entity);
     return entity;
   }
 
@@ -82,17 +90,19 @@ export class Service<T = any> extends AdapterService {
       // removing a single entity by id
 
       let entity: T;
-
+      const em = this.orm.em.fork();
       try {
         // repository methods often complain about argument types being incorrect even when they're not
         // `string` and `number` types _should_ be assignable to `FilterQuery`, but they aren't.
         // comment by package author/maintainer: https://github.com/mikro-orm/mikro-orm/issues/1405#issuecomment-775841265
-        entity = await this.repository.findOneOrFail(id as FilterQuery<T>);
+        // entity = await this.repository.findOneOrFail(id as FilterQuery<T>);
+        entity = await em.findOneOrFail(this.Entity, id as FilterQuery<T>);
       } catch (e) {
         throw new NotFound(`${this.name} not found.`);
       }
 
-      await this.repository.removeAndFlush(entity);
+      // await this.repository.removeAndFlush(entity);
+      await em.removeAndFlush(entity);
       return entity;
     } else {
       // removing many entities by a query
