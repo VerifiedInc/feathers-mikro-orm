@@ -65,7 +65,9 @@ export class Service<T = any> extends AdapterService {
 
     // await this.repository.persistAndFlush(entity);
     const em = this.orm.em.fork();
-    await em.persistAndFlush(entity);
+    // await em.persistAndFlush(entity);
+    await em.persist(entity);
+    await em.flush();
     return entity;
   }
 
