@@ -81,16 +81,17 @@ export class Service<T = any> extends AdapterService {
 
     wrap(entity).assign(data);
     // await this.repository.persistAndFlush(entity);
-    await em.persistAndFlush(entity);
+    // await em.persistAndFlush(entity);
+    await em.flush(); // no need to call persist because the entity is already managed by the EM. ref: https://mikro-orm.io/docs/entity-manager/#entity-repositories
     return entity;
   }
 
   async remove (id: NullableId, params?: Params): Promise<T | { success: true }> {
+    const em = this.orm.em.fork();
     if (id) {
       // removing a single entity by id
 
       let entity: T;
-      const em = this.orm.em.fork();
       try {
         // repository methods often complain about argument types being incorrect even when they're not
         // `string` and `number` types _should_ be assignable to `FilterQuery`, but they aren't.
@@ -106,8 +107,8 @@ export class Service<T = any> extends AdapterService {
       return entity;
     } else {
       // removing many entities by a query
-      await this.orm.em.nativeDelete(this.Entity, params?.where);
-      await this.orm.em.flush();
+      await em.nativeDelete(this.Entity, params?.where);
+      await em.flush();
       return { success: true };
     }
   }
