@@ -1,7 +1,8 @@
-import { Application } from '@feathersjs/feathers';
+import { Application, Paginated } from '@feathersjs/feathers';
 import { setupApp } from './app';
-import { Service } from '../src';
+import createService, { Service } from '../src';
 import { NotFound } from '@feathersjs/errors';
+import { Book } from './entities/Book';
 
 describe('feathers-mikro-orm', () => {
   let app: Application;
@@ -54,24 +55,124 @@ describe('feathers-mikro-orm', () => {
     });
 
     describe('find', () => {
-      it('finds by params.query if params.where is not set', async () => {
+      it('returns all entities if there are no params', async () => {
         const options = { title: 'test' };
         const options2 = { title: 'another' };
-        const initial = await service.create(options);
-        await service.create(options2);
-        const saved = await service.find({ query: { title: 'test' } });
-        expect(saved.length).toEqual(1);
-        expect(saved[0]).toEqual(initial);
+        const book1 = await service.create(options);
+        const book2 = await service.create(options2);
+        const saved = await service.find() as Book[];
+
+        expect(saved.length).toEqual(2);
+        expect(saved).toContainEqual(book1);
+        expect(saved).toContainEqual(book2);
       });
 
-      it('handles $limit query param', async () => {
+      it('finds by query params', async () => {
         const options = { title: 'test' };
-        const options2 = { title: 'test' };
-        const initial = await service.create(options);
-        await service.create(options2);
-        const saved = await service.find({ query: { title: 'test', $limit: 1 } });
+        const options2 = { title: 'another' };
+        const book1 = await service.create(options);
+        const book2 = await service.create(options2);
+        const saved = await service.find({ query: { title: 'test' } }) as Book[];
+
         expect(saved.length).toEqual(1);
-        expect(saved[0]).toEqual(initial);
+        expect(saved).toContainEqual(book1);
+        expect(saved).not.toContainEqual(book2);
+      });
+
+      describe('pagination', () => {
+        it('returns a Paginated object if $limit query param is set', async () => {
+          const options = { title: 'test' };
+          const options2 = { title: 'test' };
+          const options3 = { title: 'test' };
+          const book1 = await service.create(options);
+          const book2 = await service.create(options2);
+          await service.create(options3);
+          const result = await service.find({ query: { title: 'test', $limit: 2 } }) as Paginated<Book>;
+
+          expect(result.total).toEqual(3);
+          expect(result.limit).toEqual(2);
+          expect(result.skip).toEqual(0);
+          expect(result.data.length).toEqual(2);
+          expect(result.data).toContainEqual(book1);
+          expect(result.data).toContainEqual(book2);
+        });
+
+        it('offsets results by $skip query param', async () => {
+          const options = { title: 'test' };
+          const options2 = { title: 'test' };
+          const options3 = { title: 'test' };
+          const book1 = await service.create(options);
+          const book2 = await service.create(options2);
+          const book3 = await service.create(options3);
+          const result = await service.find({ query: { title: 'test', $limit: 2, $skip: 1 } }) as Paginated<Book>;
+
+          expect(result.total).toEqual(3);
+          expect(result.limit).toEqual(2);
+          expect(result.skip).toEqual(1);
+          expect(result.data.length).toEqual(2);
+          expect(result.data).toContainEqual(book2);
+          expect(result.data).toContainEqual(book3);
+          expect(result.data).not.toContainEqual(book1);
+        });
+
+        it('uses default limit set at service initialization if no $limit query param is set', async () => {
+          const options = { title: 'test' };
+          const options2 = { title: 'test' };
+          const options3 = { title: 'test' };
+
+          const paginatedService = createService({
+            orm: app.get('orm'),
+            Entity: Book,
+            paginate: { default: 1 }
+          });
+
+          const book = await paginatedService.create(options);
+          await paginatedService.create(options2);
+          await paginatedService.create(options3);
+          const result = await paginatedService.find({ query: { title: 'test' } }) as Paginated<Book>;
+
+          expect(result.total).toEqual(3);
+          expect(result.limit).toEqual(1);
+          expect(result.skip).toEqual(0);
+          expect(result.data.length).toEqual(1);
+          expect(result.data).toContainEqual(book);
+        });
+
+        it('honors max limit set at service initialization', async () => {
+          const options = { title: 'test' };
+          const options2 = { title: 'test' };
+          const options3 = { title: 'test' };
+
+          const paginatedService = createService({
+            orm: app.get('orm'),
+            Entity: Book,
+            paginate: { default: 1, max: 2 }
+          });
+
+          const book1 = await paginatedService.create(options);
+          const book2 = await paginatedService.create(options2);
+          await paginatedService.create(options3);
+
+          // test with a limit set in params
+          const resultWithLimit = await paginatedService.find({ query: { title: 'test', $limit: 3 } }) as Paginated<Book>;
+
+          expect(resultWithLimit.total).toEqual(3);
+          expect(resultWithLimit.limit).toEqual(2);
+          expect(resultWithLimit.skip).toEqual(0);
+          expect(resultWithLimit.data.length).toEqual(2);
+          expect(resultWithLimit.data).toContainEqual(book1);
+          expect(resultWithLimit.data).toContainEqual(book2);
+
+          // test without a limit set in params
+          const resultWithoutLimit = await paginatedService.find({ query: { title: 'test' } }) as Paginated<Book>;
+
+          expect(resultWithoutLimit.total).toEqual(3);
+          expect(resultWithoutLimit.limit).toEqual(2);
+          expect(resultWithoutLimit.skip).toEqual(0);
+          expect(resultWithoutLimit.data.length).toEqual(2);
+          expect(resultWithoutLimit.data).toContainEqual(book1);
+          expect(resultWithoutLimit.data).toContainEqual(book2);
+        });
       });
     });
 
@@ -135,7 +236,7 @@ describe('feathers-mikro-orm', () => {
         expect(response).toEqual({ success: true });
 
         // check that all of the books have been removed
-        const found = await service.find();
+        const found = await service.find() as Book[];
         expect(found.length).toEqual(0);
       });
     });
