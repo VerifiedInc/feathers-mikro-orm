@@ -33,6 +33,12 @@ export declare class Service<T = any> extends AdapterService {
      * @returns Promise<Paginated<T>> a feathers Paginated object with the query results
      */
     private _findPaginated;
+    /**
+     * helper to translate feathers query syntax to mikro-orm options syntax
+     * @param query feathers query
+     * @returns FindOptions mikro-orm FindOptions
+     */
+    private _translateFeathersQueryToFindOptions;
 }
 export default function <T = any>(options: MikroOrmServiceOptions<T>): Service<T>;
 export {};

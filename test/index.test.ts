@@ -79,6 +79,34 @@ describe('feathers-mikro-orm', () => {
         expect(saved).not.toContainEqual(book2);
       });
 
+      it('honors feathers options passed as query params', async () => {
+        const options = { title: 'test' };
+        const options2 = { title: 'another' };
+        const book1 = await service.create(options);
+        const book2 = await service.create(options2);
+        // sort/order results using feathers $sort query param
+        const saved = await service.find({ query: { $sort: { title: 1 } } }) as Book[];
+        console.log('saved', saved);
+
+        expect(saved.length).toEqual(2);
+        expect(saved[0]).toEqual(book2);
+        expect(saved[1]).toEqual(book1);
+      });
+
+      it('honors mikro-orm options passed as params.options', async () => {
+        const options = { title: 'test' };
+        const options2 = { title: 'another' };
+        const book1 = await service.create(options);
+        const book2 = await service.create(options2);
+        // sort/order results using mikro-orm orderBy option in params
+        const saved = await service.find({ options: { orderBy: { title: 'ASC' } } }) as Book[];
+        console.log('saved', saved);
+
+        expect(saved.length).toEqual(2);
+        expect(saved[0]).toEqual(book2);
+        expect(saved[1]).toEqual(book1);
+      });
+
       describe('pagination', () => {
         it('returns a Paginated object if $limit query param is set', async () => {
           const options = { title: 'test' };

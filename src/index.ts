@@ -1,8 +1,8 @@
 import { AdapterService, ServiceOptions } from '@feathersjs/adapter-commons';
 import { NullableId, Paginated, PaginationOptions, Params } from '@feathersjs/feathers';
-import { EntityRepository, MikroORM, wrap, Utils, FilterQuery, FindOptions } from '@mikro-orm/core';
+import { EntityRepository, MikroORM, wrap, Utils, FilterQuery, FindOptions, QueryOrder, QueryOrderNumeric } from '@mikro-orm/core';
 import { NotFound } from '@feathersjs/errors';
-import { min, omit } from 'lodash';
+import { min, omit, pick } from 'lodash';
 
 interface MikroOrmServiceOptions<T = any> extends Partial<ServiceOptions> {
   Entity: new (...args: any[]) => T; // constructor for instances of T
@@ -83,13 +83,17 @@ export class Service<T = any> extends AdapterService {
       limit = params.query?.$limit;
     }
 
-    const offset = params.query?.$skip || 0;
-    const options = { limit, offset };
+    const queryOptions = this._translateFeathersQueryToFindOptions(pick(params.query, feathersSpecialQueryParameters));
+    const options = {
+      ...queryOptions,
+      ...params.options,
+      limit
+    };
 
     // if limit is 0, only run a counting query
     // and return a Paginated object with the count and an empty data array
     if (limit === 0) {
-      return await this._findCount(query, offset);
+      return await this._findCount(query, options.offset);
     }
 
     // if limit is set, run a findAndCount query and return a Paginated object
@@ -177,6 +181,20 @@ export class Service<T = any> extends AdapterService {
       limit: options.limit as number,
       skip: options.offset || 0,
       data
+    };
+  }
+
+  /**
+   * helper to translate feathers query syntax to mikro-orm options syntax
+   * @param query feathers query
+   * @returns FindOptions mikro-orm FindOptions
+   */
+  private _translateFeathersQueryToFindOptions (query: any): FindOptions<T> {
+    return {
+      ...omit(query, '$sort', '$skip', '$select', '$limit'),
+      orderBy: query.$sort,
+      offset: query.$skip,
+      fields: query.$select
     };
   }
 }
