@@ -1,24 +1,42 @@
 import { AdapterService, ServiceOptions } from '@feathersjs/adapter-commons';
-import { NullableId, Params } from '@feathersjs/feathers';
-import { EntityRepository, MikroORM, wrap, Utils, FilterQuery } from '@mikro-orm/core';
+import { NullableId, Paginated, PaginationOptions, Params } from '@feathersjs/feathers';
+import { EntityRepository, MikroORM, wrap, Utils, FilterQuery, FindOptions } from '@mikro-orm/core';
 import { NotFound } from '@feathersjs/errors';
+import { min, omit } from 'lodash';
 
 interface MikroOrmServiceOptions<T = any> extends Partial<ServiceOptions> {
   Entity: new (...args: any[]) => T; // constructor for instances of T
   orm: MikroORM;
 }
 
+const feathersSpecialQueryParameters = [
+  '$limit',
+  '$skip',
+  '$sort',
+  '$select',
+  '$in',
+  '$nin',
+  '$lte',
+  '$lt',
+  '$gte',
+  '$gt',
+  '$ne',
+  '$or'
+];
+
 export class Service<T = any> extends AdapterService {
   protected orm: MikroORM;
   protected Entity: new (...args: any[]) => T;
   protected repository: EntityRepository<T>;
   protected name: string;
+  protected paginationOptions?: Partial<PaginationOptions>;
 
   constructor (options: MikroOrmServiceOptions<T>) {
-    const { orm, Entity } = options;
+    const { orm, Entity, paginate } = options;
     super(options);
     this.Entity = Entity;
     this.orm = orm;
+    this.paginationOptions = paginate;
     const name = Utils.className(Entity);
     this.repository = this.orm.em.getRepository<T, EntityRepository<T>>(name) as EntityRepository<T>;
     this.name = name;
@@ -36,25 +54,51 @@ export class Service<T = any> extends AdapterService {
     return entity;
   }
 
-  async find (params?: Params): Promise<T[]> {
+  async find (params?: Params): Promise<T[] | Paginated<T>> {
     if (!params) {
       return this.repository.findAll(params);
     }
 
-    const where = params.where
-      ? { ...params.where }
-      : params.query
-        ? { ...params.query }
-        : {};
+    // mikro-orm filter query is query params minus special feathers query params
+    const query = omit(params.query, feathersSpecialQueryParameters);
 
-    const options = params.options ? { ...params.options } : {};
+    // paginate object from params overrides default pagination options set at initialization
+    const paginationOptions = { ...this.paginationOptions, ...params.paginate };
 
-    if (where.$limit) {
-      options.limit = where.$limit;
-      delete where.$limit;
+    /**
+     * limit is
+     * - the lower value of params.query.$limit and paginationOptions.max, if both are present
+     * - params.query.$limit, if paginationOptions.max is not present
+     * - paginationOptions.default (may be undefined), if params.query.$limit is not present
+     */
+    let limit: number | undefined = paginationOptions?.default;
+    if (paginationOptions?.max) {
+      if (params.query?.$limit) {
+        limit = min([params.query.$limit, paginationOptions.max]);
+      } else {
+        limit = paginationOptions.max;
+      }
+      // 0 is a special $limit value, more on that later
+    } else if (params.query?.$limit || params.query?.$limit === 0) {
+      limit = params.query?.$limit;
     }
 
-    return this.repository.find(where, options);
+    const offset = params.query?.$skip || 0;
+    const options = { limit, offset };
+
+    // if limit is 0, only run a counting query
+    // and return a Paginated object with the count and an empty data array
+    if (limit === 0) {
+      return await this._findCount(query, offset);
+    }
+
+    // if limit is set, run a findAndCount query and return a Paginated object
+    if (limit) {
+      return await this._findPaginated(query, options);
+    } else {
+      // if no limit is set, run a regular find query and return the results
+      return await this.repository.find(query, options);
+    }
   }
 
   async create (data: Partial<T>, params?: Params): Promise<T> {
@@ -100,6 +144,40 @@ export class Service<T = any> extends AdapterService {
       await this.orm.em.flush();
       return { success: true };
     }
+  }
+
+  /**
+ * helper to get a total count of enties matching a query
+ * @param query the query to match by
+ * @param skip the $skip value from query params. kind of nonsensical and will not be used in the actual query, but is required in the return type. default 0.
+ * @returns Promise<Paginated<never>> a feathers Paginated object with the total count
+ */
+  private async _findCount (query: FilterQuery<T>, skip = 0): Promise<Paginated<never>> {
+    const total = await this.repository.count(query);
+
+    return {
+      total,
+      limit: 0,
+      skip,
+      data: []
+    };
+  }
+
+  /**
+   * helper to get paginated results matching a query
+   * @param query the filter query to match by
+   * @param options find options
+   * @returns Promise<Paginated<T>> a feathers Paginated object with the query results
+   */
+  private async _findPaginated (query: FilterQuery<T>, options: FindOptions<T>): Promise<Paginated<T>> {
+    const [data, total] = await this.repository.findAndCount(query, options);
+
+    return {
+      total,
+      limit: options.limit as number,
+      skip: options.offset || 0,
+      data
+    };
   }
 }
 
