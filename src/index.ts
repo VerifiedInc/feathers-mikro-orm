@@ -114,7 +114,7 @@ export class Service<T = any> extends AdapterService {
 
   async patch (id: NullableId, data: Partial<T>, params?: Params): Promise<T> {
     const where = params?.where || id;
-    const entity = await this.repository.findOne(where);
+    const entity = await this.repository.findOne(where, params?.populate);
 
     if (!entity) {
       throw new NotFound(`cannot patch ${this.name}, entity not found`);
