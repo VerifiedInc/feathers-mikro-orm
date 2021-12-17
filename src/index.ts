@@ -27,7 +27,7 @@ const feathersSpecialQueryParameters = [
 export class Service<T = any> extends AdapterService {
   protected orm: MikroORM;
   protected Entity: new (...args: any[]) => T;
-  protected repository: EntityRepository<T>;
+  // protected repository: EntityRepository<T>;
   protected name: string;
   protected paginationOptions?: Partial<PaginationOptions>;
 
@@ -119,20 +119,29 @@ export class Service<T = any> extends AdapterService {
     return entity;
   }
 
-  async patch (id: NullableId, data: Partial<T>, params?: Params): Promise<T> {
+  async patch (id: NullableId, data: Partial<T>, params?: Params): Promise<T | T[]> {
     const where = params?.where || id;
     // const entity = await this.repository.findOne(where, params?.populate);
     const entityRepository = this._getEntityRepository();
-    const entity = await entityRepository.findOne(where, params?.populate);
 
-    if (!entity) {
-      throw new NotFound(`cannot patch ${this.name}, entity not found`);
+    let entity;
+    if (id) {
+      entity = await entityRepository.findOne(where, params?.populate);
+      if (!entity) {
+        throw new NotFound(`cannot patch ${this.name}, entity not found`);
+      }
+
+      wrap(entity).assign(data);
+      // await this.repository.persistAndFlush(entity);
+      await entityRepository.persistAndFlush(entity);
+      return entity;
     }
 
-    wrap(entity).assign(data);
-    // await this.repository.persistAndFlush(entity);
-    await entityRepository.persistAndFlush(entity);
-    return entity;
+    // batch patch
+    const result = await this.orm.em.nativeUpdate(this.Entity, where, data);
+    await this.orm.em.flush();
+
+    return [];
   }
 
   async remove (id: NullableId, params?: Params): Promise<T | { success: true }> {
@@ -145,7 +154,7 @@ export class Service<T = any> extends AdapterService {
         // repository methods often complain about argument types being incorrect even when they're not
         // `string` and `number` types _should_ be assignable to `FilterQuery`, but they aren't.
         // comment by package author/maintainer: https://github.com/mikro-orm/mikro-orm/issues/1405#issuecomment-775841265
-        entity = await this.repository.findOneOrFail(id as FilterQuery<T>);
+        entity = await this._getEntityRepository().findOneOrFail(id as FilterQuery<T>);
       } catch (e) {
         throw new NotFound(`${this.name} not found.`);
       }
