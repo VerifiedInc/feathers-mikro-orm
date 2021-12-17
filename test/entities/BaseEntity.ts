@@ -5,9 +5,9 @@ export abstract class BaseEntity {
   @PrimaryKey()
   uuid = v4();
 
-  @Property()
+  @Property({ columnType: 'timestamptz(6)' })
   createdAt = new Date();
 
-  @Property({ onUpdate: () => new Date() })
+  @Property({ columnType: 'timestamptz(6)', onUpdate: () => new Date() })
   updatedAt = new Date();
 }
