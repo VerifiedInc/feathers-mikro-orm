@@ -214,6 +214,24 @@ describe('feathers-mikro-orm', () => {
         const saved = await service.get(initial.uuid);
         expect(saved).toEqual(patched);
       });
+
+      it('updates multiple books by query params', async () => {
+        const options1 = { title: 'test', version: '1', popularity: 1 };
+        const options2 = { title: 'test', version: '2', popularity: 1 };
+        const book1 = await service.create(options1);
+        const book2 = await service.create(options2);
+
+        const patched = await service.patch(null, { popularity: 10 }, { title: 'test' });
+
+        expect(patched.length).toEqual(2);
+        expect(patched[0].popularity).toEqual(10);
+        expect(patched[1].popularity).toEqual(10);
+
+        const saved1 = await service.get(book1.uuid);
+        expect(saved1).toEqual(patched[0]);
+        const saved2 = await service.get(book2.uuid);
+        expect(saved2).toEqual(patched[1]);
+      });
     });
 
     describe('remove', () => {
