@@ -2,7 +2,7 @@ import { AdapterService, ServiceOptions } from '@feathersjs/adapter-commons';
 import { NullableId, Paginated, PaginationOptions, Params } from '@feathersjs/feathers';
 import { EntityRepository, MikroORM, wrap, Utils, FilterQuery, FindOptions, QueryOrder, QueryOrderNumeric } from '@mikro-orm/core';
 import { NotFound } from '@feathersjs/errors';
-import { min, omit, pick } from 'lodash';
+import { isEmpty, min, omit, pick } from 'lodash';
 
 interface MikroOrmServiceOptions<T = any> extends Partial<ServiceOptions> {
   Entity: new (...args: any[]) => T; // constructor for instances of T
@@ -27,7 +27,6 @@ const feathersSpecialQueryParameters = [
 export class Service<T = any> extends AdapterService {
   protected orm: MikroORM;
   protected Entity: new (...args: any[]) => T;
-  protected repository: EntityRepository<T>;
   protected name: string;
   protected paginationOptions?: Partial<PaginationOptions>;
 
@@ -38,14 +37,17 @@ export class Service<T = any> extends AdapterService {
     this.orm = orm;
     this.paginationOptions = paginate;
     const name = Utils.className(Entity);
-    this.repository = this.orm.em.getRepository<T, EntityRepository<T>>(name) as EntityRepository<T>;
     this.name = name;
   }
 
   async get (id: NullableId, params?: Params): Promise<T> {
     const where = params?.where || params?.query?.where;
 
-    const entity = await this.orm.em.findOne(this.name, id || where, params?.populate);
+    // forking the Entity Manager in order to ensure a unique identity map per each request. ref: https://mikro-orm.io/docs/identity-map/
+    // const em = this.orm.em.fork(); // Although recommended not using for the time being thanks to ruining all the timestamps in the test; everything is off by a few micro seconds.
+    const em = this.orm.em;
+
+    const entity = await em.findOne(this.name, id || where, params?.populate);
 
     if (!entity) {
       throw new NotFound(`${this.name} not found.`);
@@ -56,7 +58,7 @@ export class Service<T = any> extends AdapterService {
 
   async find (params?: Params): Promise<T[] | Paginated<T>> {
     if (!params) {
-      return this.repository.findAll(params);
+      return this._getEntityRepository().findAll(params);
     }
 
     // mikro-orm filter query is query params minus special feathers query params
@@ -101,28 +103,57 @@ export class Service<T = any> extends AdapterService {
       return await this._findPaginated(query, options);
     } else {
       // if no limit is set, run a regular find query and return the results
-      return await this.repository.find(query, options);
+      // return await this.repository.find(query, options);
+      return await this._getEntityRepository().find(query, options);
     }
   }
 
   async create (data: Partial<T>, params?: Params): Promise<T> {
     const entity = new (this.Entity as any)(data);
 
-    await this.repository.persistAndFlush(entity);
+    await this._getEntityRepository().persistAndFlush(entity);
     return entity;
   }
 
-  async patch (id: NullableId, data: Partial<T>, params?: Params): Promise<T> {
+  async patch (id: NullableId, data: Partial<T>, params?: Params): Promise<T | T[]> {
     const where = params?.where || id;
-    const entity = await this.repository.findOne(where, params?.populate);
+    const entityRepository = this._getEntityRepository();
 
-    if (!entity) {
-      throw new NotFound(`cannot patch ${this.name}, entity not found`);
+    if (id) {
+      const entity = await entityRepository.findOne(where, params?.populate);
+      if (!entity) {
+        throw new NotFound(`cannot patch ${this.name}, entity not found`);
+      }
+
+      wrap(entity).assign(data);
+      await entityRepository.persistAndFlush(entity);
+      return entity;
     }
 
-    wrap(entity).assign(data);
-    await this.repository.persistAndFlush(entity);
-    return entity;
+    /**
+     * batch patch
+     */
+    // Note: could use this below helper but only returns number of records updated... not the records themselves so would have to query fo them after the fact. And this doesn't take the state in memory / ID map into account.
+    // const result = await this.orm.em.nativeUpdate(this.Entity, where, data, options);
+
+    // For the reasons stated above opting to go with the less efficient but easy to handle approach of finding then batch updating. Worth noting that the updates are actually batched.
+    const entities = await this.find(params) as any as T[]; // Note: a little hacky but pagination should never really be used for patch operations
+
+    if (isEmpty(entities)) {
+      throw new NotFound('cannot patch query, returned empty result set');
+    }
+
+    // here can enforce that the result count is the same as in $in array length, but unsure how to get the <some_attribute> from the query
+    // if (params?.query?.<some_attribute>.$in?.length !== entities.length) {}
+    // However, after further though this approach actually would not work thanks the query possibly having many $ins in it a logic operator. Leaving here as a note.
+
+    for (const entity of entities) {
+      wrap(entity).assign(data);
+    }
+
+    await entityRepository.persistAndFlush(entities);
+
+    return entities;
   }
 
   async remove (id: NullableId, params?: Params): Promise<T | { success: true }> {
@@ -135,12 +166,13 @@ export class Service<T = any> extends AdapterService {
         // repository methods often complain about argument types being incorrect even when they're not
         // `string` and `number` types _should_ be assignable to `FilterQuery`, but they aren't.
         // comment by package author/maintainer: https://github.com/mikro-orm/mikro-orm/issues/1405#issuecomment-775841265
-        entity = await this.repository.findOneOrFail(id as FilterQuery<T>);
+        entity = await this._getEntityRepository().findOneOrFail(id as FilterQuery<T>);
       } catch (e) {
         throw new NotFound(`${this.name} not found.`);
       }
 
-      await this.repository.removeAndFlush(entity);
+      // await this.repository.removeAndFlush(entity);
+      await this._getEntityRepository().removeAndFlush(entity);
       return entity;
     } else {
       // removing many entities by a query
@@ -151,13 +183,26 @@ export class Service<T = any> extends AdapterService {
   }
 
   /**
- * helper to get a total count of enties matching a query
+   * Helper to got the EntityRepository with fresh request context via Entity Manager forking
+   * ref: https://mikro-orm.io/docs/identity-map/#forking-entity-manager, https://mikro-orm.io/docs/identity-map/
+   * Although recommended not using for the time being thanks to ruining all the timestamps in the test; everything is off by a few micro seconds.
+   * @returns
+   */
+  protected _getEntityRepository (): EntityRepository<T> {
+    // forking the Entity Manager in order to ensure a unique identity map per each request. ref: https://mikro-orm.io/docs/identity-map/
+    // const em = this.orm.em.fork();
+    const em = this.orm.em;
+    return em.getRepository<T, EntityRepository<T>>(this.name) as EntityRepository<T>;
+  }
+
+  /**
+ * helper to get a total count of entities matching a query
  * @param query the query to match by
  * @param skip the $skip value from query params. kind of nonsensical and will not be used in the actual query, but is required in the return type. default 0.
  * @returns Promise<Paginated<never>> a feathers Paginated object with the total count
  */
   private async _findCount (query: FilterQuery<T>, skip = 0): Promise<Paginated<never>> {
-    const total = await this.repository.count(query);
+    const total = await this._getEntityRepository().count(query);
 
     return {
       total,
@@ -174,7 +219,8 @@ export class Service<T = any> extends AdapterService {
    * @returns Promise<Paginated<T>> a feathers Paginated object with the query results
    */
   private async _findPaginated (query: FilterQuery<T>, options: FindOptions<T>): Promise<Paginated<T>> {
-    const [data, total] = await this.repository.findAndCount(query, options);
+    // const [data, total] = await this.repository.findAndCount(query, options);
+    const [data, total] = await this._getEntityRepository().findAndCount(query, options);
 
     return {
       total,

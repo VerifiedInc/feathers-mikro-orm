@@ -3,7 +3,7 @@
   "version": "0.0.2",
   "description": "A service adapter for MikroORM",
   "main": "lib/index.js",
-  "author": "jacobleesinger",
+  "author": "UnumID",
   "license": "MIT",
   "dependencies": {
     "@feathersjs/adapter-commons": "^4.5.7",
@@ -37,6 +37,7 @@
   "scripts": {
     "lint": "eslint \"src/**.ts\" \"test/**.ts\"",
     "jest": "jest --forceExit --runInBand",
-    "test": "yarn jest"
+    "test": "yarn jest",
+    "build": "rm -rf lib && tsc"
   }
 }
