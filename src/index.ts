@@ -2,7 +2,7 @@ import { AdapterService, ServiceOptions } from '@feathersjs/adapter-commons';
 import { NullableId, Paginated, PaginationOptions, Params } from '@feathersjs/feathers';
 import { EntityRepository, MikroORM, wrap, Utils, FilterQuery, FindOptions, QueryOrder, QueryOrderNumeric } from '@mikro-orm/core';
 import { NotFound } from '@feathersjs/errors';
-import { min, omit, pick } from 'lodash';
+import { isEmpty, min, omit, pick } from 'lodash';
 
 interface MikroOrmServiceOptions<T = any> extends Partial<ServiceOptions> {
   Entity: new (...args: any[]) => T; // constructor for instances of T
@@ -127,7 +127,6 @@ export class Service<T = any> extends AdapterService {
       }
 
       wrap(entity).assign(data);
-      // await this.repository.persistAndFlush(entity);
       await entityRepository.persistAndFlush(entity);
       return entity;
     }
@@ -140,6 +139,15 @@ export class Service<T = any> extends AdapterService {
 
     // For the reasons stated above opting to go with the less efficient but easy to handle approach of finding then batch updating. Worth noting that the updates are actually batched.
     const entities = await this.find(params) as any as T[]; // Note: a little hacky but pagination should never really be used for patch operations
+
+    if (isEmpty(entities)) {
+      throw new NotFound('cannot patch query, returned empty result set');
+    }
+
+    // here can enforce that the result count is the same as in $in array length, but unsure how to get the <some_attribute> from the query
+    // if (params?.query?.<some_attribute>.$in?.length !== entities.length) {}
+    // However, after further though this approach actually would not work thanks the query possibly having many $ins in it a logic operator. Leaving here as a note.
+
     for (const entity of entities) {
       wrap(entity).assign(data);
     }
