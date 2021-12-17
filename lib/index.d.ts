@@ -8,19 +8,24 @@ interface MikroOrmServiceOptions<T = any> extends Partial<ServiceOptions> {
 export declare class Service<T = any> extends AdapterService {
     protected orm: MikroORM;
     protected Entity: new (...args: any[]) => T;
-    protected repository: EntityRepository<T>;
     protected name: string;
     protected paginationOptions?: Partial<PaginationOptions>;
     constructor(options: MikroOrmServiceOptions<T>);
     get(id: NullableId, params?: Params): Promise<T>;
     find(params?: Params): Promise<T[] | Paginated<T>>;
     create(data: Partial<T>, params?: Params): Promise<T>;
-    patch(id: NullableId, data: Partial<T>, params?: Params): Promise<T>;
+    patch(id: NullableId, data: Partial<T>, params?: Params): Promise<T | T[]>;
     remove(id: NullableId, params?: Params): Promise<T | {
         success: true;
     }>;
     /**
-   * helper to get a total count of enties matching a query
+     * Helper to got the EntityRepository with fresh request context via Entity Manager forking
+     * ref: https://mikro-orm.io/docs/identity-map/#forking-entity-manager
+     * @returns
+     */
+    protected _getEntityRepository(): EntityRepository<T>;
+    /**
+   * helper to get a total count of entities matching a query
    * @param query the query to match by
    * @param skip the $skip value from query params. kind of nonsensical and will not be used in the actual query, but is required in the return type. default 0.
    * @returns Promise<Paginated<never>> a feathers Paginated object with the total count
