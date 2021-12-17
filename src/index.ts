@@ -27,7 +27,6 @@ const feathersSpecialQueryParameters = [
 export class Service<T = any> extends AdapterService {
   protected orm: MikroORM;
   protected Entity: new (...args: any[]) => T;
-  // protected repository: EntityRepository<T>;
   protected name: string;
   protected paginationOptions?: Partial<PaginationOptions>;
 
@@ -38,7 +37,6 @@ export class Service<T = any> extends AdapterService {
     this.orm = orm;
     this.paginationOptions = paginate;
     const name = Utils.className(Entity);
-    // this.repository = this.orm.em.getRepository<T, EntityRepository<T>>(name) as EntityRepository<T>;
     this.name = name;
   }
 
@@ -114,14 +112,12 @@ export class Service<T = any> extends AdapterService {
   async create (data: Partial<T>, params?: Params): Promise<T> {
     const entity = new (this.Entity as any)(data);
 
-    // await this.repository.persistAndFlush(entity);
     await this._getEntityRepository().persistAndFlush(entity);
     return entity;
   }
 
   async patch (id: NullableId, data: Partial<T>, params?: Params): Promise<T | T[]> {
     const where = params?.where || id;
-    // const entity = await this.repository.findOne(where, params?.populate);
     const entityRepository = this._getEntityRepository();
 
     if (id) {
@@ -136,9 +132,13 @@ export class Service<T = any> extends AdapterService {
       return entity;
     }
 
-    // // batch patch
-    // const result = await this.orm.em.nativeUpdate(this.Entity, where, data);
-    // await this.orm.em.flush();
+    /**
+     * batch patch
+     */
+    // Note: could use this below helper but only returns number of records updated... not the records themselves so would have to query fo them after the fact. And this doesn't take the state in memory / ID map into account.
+    // const result = await this.orm.em.nativeUpdate(this.Entity, where, data, options);
+
+    // For the reasons stated above opting to go with the less efficient but easy to handle approach of finding then batch updating. Worth noting that the updates are actually batched.
     const entities = await this.find(params) as any as T[]; // Note: a little hacky but pagination should never really be used for patch operations
     for (const entity of entities) {
       wrap(entity).assign(data);
@@ -177,10 +177,12 @@ export class Service<T = any> extends AdapterService {
 
   /**
    * Helper to got the EntityRepository with fresh request context via Entity Manager forking
-   * ref: https://mikro-orm.io/docs/identity-map/#forking-entity-manager
+   * ref: https://mikro-orm.io/docs/identity-map/#forking-entity-manager, https://mikro-orm.io/docs/identity-map/
+   * Although recommended not using for the time being thanks to ruining all the timestamps in the test; everything is off by a few micro seconds.
    * @returns
    */
   protected _getEntityRepository (): EntityRepository<T> {
+    // forking the Entity Manager in order to ensure a unique identity map per each request. ref: https://mikro-orm.io/docs/identity-map/
     // const em = this.orm.em.fork();
     const em = this.orm.em;
     return em.getRepository<T, EntityRepository<T>>(this.name) as EntityRepository<T>;
@@ -193,7 +195,6 @@ export class Service<T = any> extends AdapterService {
  * @returns Promise<Paginated<never>> a feathers Paginated object with the total count
  */
   private async _findCount (query: FilterQuery<T>, skip = 0): Promise<Paginated<never>> {
-    // const total = await this.repository.count(query);
     const total = await this._getEntityRepository().count(query);
 
     return {
