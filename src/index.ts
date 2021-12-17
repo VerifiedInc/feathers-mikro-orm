@@ -124,9 +124,8 @@ export class Service<T = any> extends AdapterService {
     // const entity = await this.repository.findOne(where, params?.populate);
     const entityRepository = this._getEntityRepository();
 
-    let entity;
     if (id) {
-      entity = await entityRepository.findOne(where, params?.populate);
+      const entity = await entityRepository.findOne(where, params?.populate);
       if (!entity) {
         throw new NotFound(`cannot patch ${this.name}, entity not found`);
       }
@@ -137,11 +136,17 @@ export class Service<T = any> extends AdapterService {
       return entity;
     }
 
-    // batch patch
-    const result = await this.orm.em.nativeUpdate(this.Entity, where, data);
-    await this.orm.em.flush();
+    // // batch patch
+    // const result = await this.orm.em.nativeUpdate(this.Entity, where, data);
+    // await this.orm.em.flush();
+    const entities = await this.find(params) as any as T[]; // Note: a little hacky but pagination should never really be used for patch operations
+    for (const entity in entities) {
+      wrap(entity).assign(data);
+    }
 
-    return [];
+    await entityRepository.persistAndFlush(entities);
+
+    return entities;
   }
 
   async remove (id: NullableId, params?: Params): Promise<T | { success: true }> {
