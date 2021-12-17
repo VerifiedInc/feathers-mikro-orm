@@ -140,7 +140,7 @@ export class Service<T = any> extends AdapterService {
     // const result = await this.orm.em.nativeUpdate(this.Entity, where, data);
     // await this.orm.em.flush();
     const entities = await this.find(params) as any as T[]; // Note: a little hacky but pagination should never really be used for patch operations
-    for (const entity in entities) {
+    for (const entity of entities) {
       wrap(entity).assign(data);
     }
 
