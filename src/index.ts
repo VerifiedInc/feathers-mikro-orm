@@ -58,7 +58,6 @@ export class Service<T = any> extends AdapterService {
 
   async find (params?: Params): Promise<T[] | Paginated<T>> {
     if (!params) {
-      // return this.repository.findAll(params);
       return this._getEntityRepository().findAll(params);
     }
 
