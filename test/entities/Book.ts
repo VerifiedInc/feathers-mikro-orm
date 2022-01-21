@@ -6,8 +6,12 @@ export class Book extends BaseEntity {
   @Property()
   title: string;
 
-  constructor (options: { title: string }) {
+  @Property()
+  popularity?: number;
+
+  constructor (options: { title: string; popularity?: number }) {
     super();
     this.title = options.title;
+    this.popularity = options.popularity || null;
   }
 }
