@@ -187,7 +187,6 @@ export class Service<T = any> extends AdapterService {
   protected _getEntityRepository (): EntityRepository<T> {
     // forking the Entity Manager in order to ensure a unique identity map per each request. ref: https://mikro-orm.io/docs/identity-map/
     const em = this.orm.em.fork();
-    // const em = this.orm.em;
     return em.getRepository<T, EntityRepository<T>>(this.name) as EntityRepository<T>;
   }
 
