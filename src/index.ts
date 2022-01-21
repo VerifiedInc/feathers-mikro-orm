@@ -43,11 +43,7 @@ export class Service<T = any> extends AdapterService {
   async get (id: NullableId, params?: Params): Promise<T> {
     const where = params?.where || params?.query?.where;
 
-    // forking the Entity Manager in order to ensure a unique identity map per each request. ref: https://mikro-orm.io/docs/identity-map/
-    // const em = this.orm.em.fork(); // Although recommended not using for the time being thanks to ruining all the timestamps in the test; everything is off by a few micro seconds.
-    const em = this.orm.em;
-
-    const entity = await em.findOne(this.name, id || where, params?.populate);
+    const entity = await this._getEntityRepository().findOne(id || where, params?.populate);
 
     if (!entity) {
       throw new NotFound(`${this.name} not found.`);
@@ -190,8 +186,7 @@ export class Service<T = any> extends AdapterService {
    */
   protected _getEntityRepository (): EntityRepository<T> {
     // forking the Entity Manager in order to ensure a unique identity map per each request. ref: https://mikro-orm.io/docs/identity-map/
-    // const em = this.orm.em.fork();
-    const em = this.orm.em;
+    const em = this.orm.em.fork();
     return em.getRepository<T, EntityRepository<T>>(this.name) as EntityRepository<T>;
   }
 
