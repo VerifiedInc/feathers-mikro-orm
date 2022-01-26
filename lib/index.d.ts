@@ -21,7 +21,6 @@ export declare class Service<T = any> extends AdapterService {
     /**
      * Helper to got the EntityRepository with fresh request context via Entity Manager forking
      * ref: https://mikro-orm.io/docs/identity-map/#forking-entity-manager, https://mikro-orm.io/docs/identity-map/
-     * Although recommended not using for the time being thanks to ruining all the timestamps in the test; everything is off by a few micro seconds.
      * @returns
      */
     protected _getEntityRepository(): EntityRepository<T>;
