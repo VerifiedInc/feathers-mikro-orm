@@ -37,7 +37,7 @@
   "scripts": {
     "lint": "eslint \"src/**.ts\" \"test/**.ts\"",
     "jest": "jest --forceExit --runInBand",
-    "test": "yarn jest",
+    "test": "yarn run build && yarn jest",
     "build": "rm -rf lib && tsc"
   }
 }
