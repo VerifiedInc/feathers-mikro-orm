@@ -4,6 +4,8 @@ import createService, { Service } from '../src';
 import { NotFound } from '@feathersjs/errors';
 import { Book } from './entities/Book';
 
+jest.setTimeout(10000);
+
 describe('feathers-mikro-orm', () => {
   let app: Application;
 
