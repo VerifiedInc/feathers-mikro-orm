@@ -152,7 +152,7 @@ export class Service<T = any> extends AdapterService {
     return entities;
   }
 
-  async remove (id: NullableId, params?: Params): Promise<T | { success: true }> {
+  async remove (id: NullableId, params?: Params): Promise<T | { success: boolean }> {
     if (id) {
       // removing a single entity by id
 
@@ -170,13 +170,17 @@ export class Service<T = any> extends AdapterService {
       // await this.repository.removeAndFlush(entity);
       await this._getEntityRepository().removeAndFlush(entity);
       return entity;
-    } else {
+    } else if (params?.query || params?.where) {
+      const query = params?.query || params?.where;
+      
       // removing many entities by a query
       const entityRepo = this._getEntityRepository();
-      await entityRepo.nativeDelete(params?.where);
+      await entityRepo.nativeDelete(query);
       await entityRepo.flush();
       return { success: true };
     }
+
+    return { success: false };
   }
 
   /**
