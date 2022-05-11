@@ -14,9 +14,7 @@ export async function setupApp (): Promise<Application> {
     dbName: 'feathers_mikro_orm_test',
     host: 'localhost',
     entities: [Book, BaseEntity],
-    debug: false,
-    metadataProvider: TsMorphMetadataProvider,
-    user: 'raysmets'
+    debug: false
   };
 
   const orm = await MikroORM.init(config);
