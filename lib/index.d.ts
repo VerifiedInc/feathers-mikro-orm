@@ -16,7 +16,7 @@ export declare class Service<T = any> extends AdapterService {
     create(data: Partial<T>, params?: Params): Promise<T>;
     patch(id: NullableId, data: Partial<T>, params?: Params): Promise<T | T[]>;
     remove(id: NullableId, params?: Params): Promise<T | {
-        success: true;
+        success: boolean;
     }>;
     /**
      * Helper to got the EntityRepository with fresh request context via Entity Manager forking
