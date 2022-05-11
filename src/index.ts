@@ -174,9 +174,10 @@ export class Service<T = any> extends AdapterService {
       const query = params?.query || params?.where;
       // removing many entities by a query
       const entityRepo = this._getEntityRepository();
-      await entityRepo.nativeDelete(query);
+      const deletedCount = await entityRepo.nativeDelete(query);
       await entityRepo.flush();
-      return { success: true };
+
+      return deletedCount > 0 ? { success: true } : { success: false };
     }
 
     return { success: false };
