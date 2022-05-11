@@ -172,7 +172,6 @@ export class Service<T = any> extends AdapterService {
       return entity;
     } else if (params?.query || params?.where) {
       const query = params?.query || params?.where;
-      
       // removing many entities by a query
       const entityRepo = this._getEntityRepository();
       await entityRepo.nativeDelete(query);
