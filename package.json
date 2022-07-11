@@ -1,10 +1,13 @@
 {
   "name": "feathers-mikro-orm",
-  "version": "0.0.2",
+  "version": "0.7.1",
   "description": "A service adapter for MikroORM",
   "main": "lib/index.js",
   "author": "UnumID",
   "license": "MIT",
+  "publishConfig": {
+    "@UnumID:registry": "https://npm.pkg.github.com"
+  },
   "dependencies": {
     "@feathersjs/adapter-commons": "^4.5.7",
     "@feathersjs/errors": "^4.5.10",
