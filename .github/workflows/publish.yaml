@@ -40,7 +40,7 @@ jobs:
           node-version: 12.x
 
       - name: Install dependencies
-        run: npm i
+        run: npm ci
 
       # ref: https://github.community/t/auto-update-package-json-on-publishing/16894
       - name: Update package version
@@ -79,7 +79,7 @@ jobs:
           author_name: UnumID Admin
           author_email: liam@unum.id
           message: '[Release ${{ env.RELEASE_VERSION }}] ${{ env.TAG_MESSAGE }}'
-          add: '["package.json", "docs/", "build/"]'
+          add: '["package.json"]'
           branch: main
 
       ref: https://github.com/actions/create-release
