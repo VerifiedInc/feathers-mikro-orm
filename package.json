@@ -1,6 +1,6 @@
 {
   "name": "feathers-mikro-orm",
-  "version": "0.7.1",
+  "version": "0.7.8",
   "description": "A service adapter for MikroORM",
   "main": "lib/index.js",
   "author": "UnumID",
