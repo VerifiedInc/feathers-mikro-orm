@@ -65,30 +65,30 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # ref: https://github.com/marketplace/actions/add-commit
-      - name: Commit changes
-        uses: EndBug/add-and-commit@v7
-        with:
-          author_name: UnumID Admin
-          author_email: liam@unum.id
-          message: '[Release ${{ env.RELEASE_VERSION }}] ${{ env.TAG_MESSAGE }}'
-          add: '["package.json"]'
-          branch: main
+      # # ref: https://github.com/marketplace/actions/add-commit
+      # - name: Commit changes
+      #   uses: EndBug/add-and-commit@v7
+      #   with:
+      #     author_name: UnumID Admin
+      #     author_email: liam@unum.id
+      #     message: '[Release ${{ env.RELEASE_VERSION }}] ${{ env.TAG_MESSAGE }}'
+      #     add: '["package.json"]'
+      #     branch: main
 
-      # ref: https://github.com/actions/create-release
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
-        with:
-          tag_name: ${{ env.RELEASE_VERSION }}
-          release_name: ${{ env.RELEASE_VERSION }}
-          body: ${{ env.TAG_MESSAGE }}
-          # body: |
-          #   Changes in this Release
-          #   - First Change
-          #   - Second Change
-          draft: false
-          prerelease: false
-          commitish: main
+      # # ref: https://github.com/actions/create-release
+      # - name: Create Release
+      #   id: create_release
+      #   uses: actions/create-release@v1
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+      #   with:
+      #     tag_name: ${{ env.RELEASE_VERSION }}
+      #     release_name: ${{ env.RELEASE_VERSION }}
+      #     body: ${{ env.TAG_MESSAGE }}
+      #     # body: |
+      #     #   Changes in this Release
+      #     #   - First Change
+      #     #   - Second Change
+      #     draft: false
+      #     prerelease: false
+      #     commitish: main
