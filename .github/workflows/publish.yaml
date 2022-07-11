@@ -1,0 +1,101 @@
+name: deployment
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  releaseJob:
+    name: Update version & deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+
+      # ref: https://stackoverflow.com/questions/58177786/get-the-current-pushed-tag-in-github-actions
+      - name: Set version env
+        run: |
+          echo "RELEASE_VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+          echo "TAG_VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+      
+      # ref: https://stackoverflow.com/questions/65606498/how-to-access-github-tag-message-in-github-actions
+      - name: Get and set tag message
+        run: |
+          git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+          git tag -l --format='%(contents:subject)' ${GITHUB_REF#refs/*/}
+          echo "TAG_MESSAGE=$(git tag -l --format='%(contents:subject)' ${GITHUB_REF#refs/*/})" >> $GITHUB_ENV
+      
+      - name: Test env
+        run: |
+          echo $RELEASE_VERSION
+          echo ${{ env.RELEASE_VERSION }}
+          echo $TAG_VERSION
+          echo ${{ env.TAG_VERSION }}
+          echo ${{ env.TAG_MESSAGE }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: 12.x
+
+      - name: Install dependencies
+        run: npm i
+
+      # ref: https://github.community/t/auto-update-package-json-on-publishing/16894
+      - name: Update package version
+        run: |
+          npm --no-git-tag-version version ${{ env.RELEASE_VERSION }}
+          
+      # ref: https://github.com/marketplace/actions/npm-publish
+      - name: NPM package publish
+        uses: JS-DevTools/npm-publish@v1
+        with:
+          token: ${{ secrets.NPM_TOKEN }}
+          access: public
+          registry: https://registry.npmjs.org/
+
+      - name: Github package publish
+        uses: JS-DevTools/npm-publish@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          access: public
+          registry: https://npm.pkg.github.com
+
+      # ref: https://github.com/marketplace/actions/delete-tag-and-release
+      - name: Delete the v tag
+        uses: dev-drprasad/delete-tag-and-release@v0.2.0
+        with:
+          delete_release: true # default: false
+          tag_name: ${{ env.TAG_VERSION }} # tag name to delete
+          # repo: <owner>/<repoName> # target repo (optional). defaults to repo running this action
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # ref: https://github.com/marketplace/actions/add-commit
+      # - name: Commit changes
+      #   uses: EndBug/add-and-commit@v7
+      #   with:
+      #     author_name: UnumID Admin
+      #     author_email: liam@unum.id
+      #     message: '[Release ${{ env.RELEASE_VERSION }}] ${{ env.TAG_MESSAGE }}'
+      #     add: '["package.json", "docs/", "build/"]'
+      #     branch: main
+
+      # ref: https://github.com/actions/create-release
+      # - name: Create Release
+      #   id: create_release
+      #   uses: actions/create-release@v1
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+      #   with:
+      #     tag_name: ${{ env.RELEASE_VERSION }}
+      #     release_name: ${{ env.RELEASE_VERSION }}
+      #     body: ${{ env.TAG_MESSAGE }}
+      #     # body: |
+      #     #   Changes in this Release
+      #     #   - First Change
+      #     #   - Second Change
+      #     draft: false
+      #     prerelease: false
+      #     commitish: main
