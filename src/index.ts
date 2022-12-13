@@ -5,7 +5,7 @@ import {
   AdapterServiceOptions,
   PaginationOptions
 } from '@feathersjs/adapter-commons';
-import { NotImplemented } from '@feathersjs/errors/lib';
+import { MethodNotAllowed, NotImplemented } from '@feathersjs/errors/lib';
 import { Id, NullableId, Paginated, Params } from '@feathersjs/feathers';
 import { EntityManager } from '@mikro-orm/core';
 
@@ -53,6 +53,7 @@ export class MikroORMAdapter<
 
   async _create (data: Partial<Data>, params?: ServiceParams): Promise<Result>
   async _create (data: Partial<Data>[], params?: ServiceParams): Promise<Result[]>
+  async _create (data: Partial<Data> | Partial<Data>[], params?: ServiceParams): Promise<Result | Result[]>
   async _create (
     data: Partial<Data> | Partial<Data>[],
     _params: ServiceParams = {} as ServiceParams
@@ -80,6 +81,7 @@ export class MikroORMAdapter<
 
   async _patch (id: null, data: Partial<Data>, params?: ServiceParams): Promise<Result[]>
   async _patch (id: Id, data: Partial<Data>, params?: ServiceParams): Promise<Result>
+  async _patch (id: NullableId, data: Partial<Data> | Partial<Data>[], params?: ServiceParams): Promise<Result>
   async _patch (
     id: NullableId,
     data: Partial<Data>,
@@ -100,6 +102,90 @@ export class MikroORMAdapter<
   async _remove (id: NullableId, _params?: ServiceParams): Promise<Result | Result[]>
   async _remove (id: NullableId, params: ServiceParams = {} as ServiceParams): Promise<Result | Result[]> {
     throw new NotImplemented();
+  }
+}
+
+export class MikroORMService<
+  Result = any,
+  Data = Partial<Result>,
+  ServiceParams extends Params = Params
+> extends MikroORMAdapter<Result, Data, ServiceParams> {
+  async find (params?: ServiceParams & { paginate?: PaginationOptions }): Promise<Paginated<Result>>
+  async find (params?: ServiceParams & { paginate: false }): Promise<Result[]>
+  async find (params?: ServiceParams): Promise<Result[] | Paginated<Result>>
+  async find (params?: ServiceParams): Promise<Result[] | Paginated<Result>> {
+    const sanitizedParams = await this.sanitizeParams(params);
+
+    return this._find(sanitizedParams);
+  }
+
+  async get (id: NullableId, params?: ServiceParams): Promise<Result> {
+    const sanitizedParams = await this.sanitizeParams(params);
+
+    return this._get(id, sanitizedParams);
+  }
+
+  async create (data: Partial<Data>, params?: ServiceParams): Promise<Result>
+  async create (data: Partial<Data>[], params?: ServiceParams): Promise<Result[]>
+  async create (data: Partial<Data> | Partial<Data>[], params?: ServiceParams): Promise<Result | Result[]> {
+    if (!Array.isArray(data) && !this.allowsMulti('create', params)) {
+      throw new MethodNotAllowed('Can not create multiple entries');
+    }
+
+    return this._create(data, params);
+  }
+
+  async update (id: Id, data: Data, params?: ServiceParams): Promise<Result> {
+    const sanitizedParams = await this.sanitizeParams(params);
+    return this._update(id, data, sanitizedParams);
+  }
+
+  async patch (id: Id, data: Partial<Data>, params?: ServiceParams): Promise<Result>
+  async patch (id: null, data: Partial<Data>[], params?: ServiceParams): Promise<Result[]>
+  async patch (id: NullableId, data: Partial<Data> | Partial<Data>[], params?: ServiceParams): Promise<Result | Result[]> {
+    if (id === null && !Array.isArray(data) && !this.allowsMulti('patch', params)) {
+      throw new MethodNotAllowed('Can not patch multiple entries');
+    }
+
+    const sanitizedParams = await this.sanitizeParamsAndRemoveLimit(params);
+
+    return this._patch(id, data, sanitizedParams);
+  }
+
+  async remove (id: Id, params?: ServiceParams): Promise<Result>
+  async remove (id: null, params?: ServiceParams): Promise<Result[]>
+  async remove (id: NullableId, params?: ServiceParams): Promise<Result | Result[]> {
+    if (id === null && !this.allowsMulti('remove', params)) {
+      throw new MethodNotAllowed('Can not remove multiple entries');
+    }
+
+    const sanitizedParams = await this.sanitizeParamsAndRemoveLimit(params);
+
+    return this._remove(id, sanitizedParams);
+  }
+
+  private async sanitizeParams (params?: ServiceParams): Promise<ServiceParams> {
+    const sanitizedParams = {
+      ...params,
+      query: await this.sanitizeQuery(params)
+    } as ServiceParams;
+
+    return sanitizedParams;
+  }
+
+  private async sanitizeParamsAndRemoveLimit (params?: ServiceParams): Promise<ServiceParams> {
+    const {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      $limit,
+      ...query
+    } = await this.sanitizeQuery(params);
+
+    const sanitizedParams = {
+      ...params,
+      query
+    } as ServiceParams;
+
+    return sanitizedParams;
   }
 }
 
