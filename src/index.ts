@@ -6,9 +6,9 @@ import {
   PaginationOptions,
   PaginationParams
 } from '@feathersjs/adapter-commons';
-import { MethodNotAllowed, NotFound, NotImplemented } from '@feathersjs/errors/lib';
+import { BadRequest, MethodNotAllowed, NotFound, NotImplemented } from '@feathersjs/errors/lib';
 import { Id, NullableId, Paginated, Params, Query } from '@feathersjs/feathers';
-import { EntityManager, FilterQuery, FindOptions, RequiredEntityData } from '@mikro-orm/core';
+import { EntityData, EntityManager, FilterQuery, FindOptions, RequiredEntityData } from '@mikro-orm/core';
 import { min, omit } from 'lodash';
 
 export interface MikroORMServiceOptions<Result = any> extends AdapterServiceOptions {
@@ -225,15 +225,46 @@ export class MikroORMAdapter<
     throw new NotImplemented();
   }
 
-  async _patch (id: null, data: Partial<Data>, params?: ServiceParams): Promise<Result[]>
-  async _patch (id: Id, data: Partial<Data>, params?: ServiceParams): Promise<Result>
-  async _patch (id: NullableId, data: Partial<Data> | Partial<Data>[], params?: ServiceParams): Promise<Result>
+  async _patch (id: null, data: Data, params?: ServiceParams): Promise<Result[]>
+  async _patch (id: Id, data: Data, params?: ServiceParams): Promise<Result>
+  async _patch (id: NullableId, data: Data | Data[], params?: ServiceParams): Promise<Result>
   async _patch (
     id: NullableId,
-    data: Partial<Data>,
+    data: Data | Data[],
     _params: ServiceParams = {} as ServiceParams
   ): Promise<Result | Result[]> {
-    throw new NotImplemented();
+    return id
+      ? this._patchById(id, data, _params)
+      : this._patchByParams(data, _params);
+  }
+
+  private async _patchById (id: Id, data: Data | Data[], params?: ServiceParams): Promise<Result> {
+    if (Array.isArray(data)) {
+      throw new BadRequest('Cannot patch multiple entites when id is set.');
+    }
+
+    const entity = await this._get(id, params);
+
+    this.em.assign<Result>(entity, data);
+
+    await this.em.flush();
+
+    return entity;
+  }
+
+  private async _patchByParams (data: Data | Data[], params?: ServiceParams): Promise<Result[]> {
+    const entities = await this._findUnpaginated(params as ServiceParams);
+
+    for (const entity of entities) {
+      const changeSet = Array.isArray(data)
+        ? data.find((item) => (item as any)[this.id] === (entity as any)[this.id])
+        : data;
+      this.em.assign<Result>(entity, changeSet as EntityData<Result>);
+    }
+
+    await this.em.flush();
+
+    return entities;
   }
 
   async $remove (id: null, params?: ServiceParams): Promise<Result[]>
@@ -309,9 +340,10 @@ export class MikroORMService<
     return this._update(id, data, sanitizedParams);
   }
 
-  async patch (id: Id, data: Partial<Data>, params?: ServiceParams): Promise<Result>
-  async patch (id: null, data: Partial<Data>[], params?: ServiceParams): Promise<Result[]>
-  async patch (id: NullableId, data: Partial<Data> | Partial<Data>[], params?: ServiceParams): Promise<Result | Result[]> {
+  async patch (id: Id, data: Data, params?: ServiceParams): Promise<Result>
+  async patch (id: null, data: Data[], params?: ServiceParams): Promise<Result[]>
+  async patch(id: NullableId, data: Data | Data[], params?: ServiceParams): Promise<Result>
+  async patch (id: NullableId, data: Data | Data[], params?: ServiceParams): Promise<Result | Result[]> {
     if (id === null && !Array.isArray(data) && !this.allowsMulti('patch', params)) {
       throw new MethodNotAllowed('Can not patch multiple entries');
     }
