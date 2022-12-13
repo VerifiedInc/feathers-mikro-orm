@@ -7,19 +7,26 @@ import {
 } from '@feathersjs/adapter-commons';
 import { MethodNotAllowed, NotImplemented } from '@feathersjs/errors/lib';
 import { Id, NullableId, Paginated, Params } from '@feathersjs/feathers';
-import { EntityManager } from '@mikro-orm/core';
+import { EntityManager, RequiredEntityData } from '@mikro-orm/core';
 
 export interface MikroORMServiceOptions<Result = any> extends AdapterServiceOptions {
-
+  em: EntityManager;
+  Entity: any;
 }
 
 export class MikroORMAdapter<
-  Result = any,
-  Data = Partial<Result>,
+  Result extends object = any,
+  Data extends RequiredEntityData<Result> = RequiredEntityData<Result>,
   ServiceParams extends Params = Params,
 > extends AdapterBase<Result, Data, ServiceParams, MikroORMServiceOptions<Result> > {
-  constructor (options: MikroORMServiceOptions<Result> = {}) {
+  protected readonly em: EntityManager;
+  protected readonly Entity: any;
+
+  constructor (options: MikroORMServiceOptions<Result>) {
     super(options);
+
+    this.em = options.em;
+    this.Entity = options.Entity;
   }
 
   async $find (_params?: ServiceParams & { paginate?: PaginationOptions }): Promise<Paginated<Result>>
@@ -51,14 +58,30 @@ export class MikroORMAdapter<
     throw new NotImplemented();
   }
 
-  async _create (data: Partial<Data>, params?: ServiceParams): Promise<Result>
-  async _create (data: Partial<Data>[], params?: ServiceParams): Promise<Result[]>
-  async _create (data: Partial<Data> | Partial<Data>[], params?: ServiceParams): Promise<Result | Result[]>
+  async _create (data: Data, params?: ServiceParams): Promise<Result>
+  async _create (data: Data[], params?: ServiceParams): Promise<Result[]>
+  async _create (data: Data | Data[], params?: ServiceParams): Promise<Result | Result[]>
   async _create (
-    data: Partial<Data> | Partial<Data>[],
+    data: Data | Data[],
     _params: ServiceParams = {} as ServiceParams
   ): Promise<Result | Result[]> {
-    throw new NotImplemented();
+    return Array.isArray(data)
+      ? this._createMany(data, _params)
+      : this._createOne(data, _params);
+  }
+
+  private async _createOne (data: Data, params?: ServiceParams): Promise<Result> {
+    const createdEntity = this.em.create<Result>(this.Entity, data);
+    await this.em.persistAndFlush(createdEntity);
+
+    return createdEntity;
+  }
+
+  private async _createMany (data: Data[], params?: ServiceParams): Promise<Result[]> {
+    const createdEntities = data.map((entityData) => this.em.create<Result>(this.Entity, entityData));
+    await this.em.persistAndFlush(createdEntities);
+
+    return createdEntities;
   }
 
   async $update (id: Id, data: Data, params?: ServiceParams): Promise<Result> {
@@ -106,8 +129,8 @@ export class MikroORMAdapter<
 }
 
 export class MikroORMService<
-  Result = any,
-  Data = Partial<Result>,
+  Result extends object = any,
+  Data extends RequiredEntityData<Result> = RequiredEntityData<Result>,
   ServiceParams extends Params = Params
 > extends MikroORMAdapter<Result, Data, ServiceParams> {
   async find (params?: ServiceParams & { paginate?: PaginationOptions }): Promise<Paginated<Result>>
@@ -125,9 +148,9 @@ export class MikroORMService<
     return this._get(id, sanitizedParams);
   }
 
-  async create (data: Partial<Data>, params?: ServiceParams): Promise<Result>
-  async create (data: Partial<Data>[], params?: ServiceParams): Promise<Result[]>
-  async create (data: Partial<Data> | Partial<Data>[], params?: ServiceParams): Promise<Result | Result[]> {
+  async create (data: Data, params?: ServiceParams): Promise<Result>
+  async create (data: Data[], params?: ServiceParams): Promise<Result[]>
+  async create (data: Data | Data[], params?: ServiceParams): Promise<Result | Result[]> {
     if (!Array.isArray(data) && !this.allowsMulti('create', params)) {
       throw new MethodNotAllowed('Can not create multiple entries');
     }
@@ -189,7 +212,11 @@ export class MikroORMService<
   }
 }
 
-export function createService<Result = any, Data = Partial<Result>, ServiceParams extends Params = Params> (
+export function createService<
+  Result extends object,
+  Data extends RequiredEntityData<Result> = RequiredEntityData<Result>,
+  ServiceParams extends Params = Params
+> (
   options: MikroORMServiceOptions<Result>
 ): MikroORMService<Result, Data, ServiceParams> {
   return new MikroORMService<Result, Data, ServiceParams>(options);
