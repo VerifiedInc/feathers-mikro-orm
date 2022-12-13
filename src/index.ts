@@ -278,7 +278,24 @@ export class MikroORMAdapter<
   async _remove (id: Id, params?: ServiceParams): Promise<Result>
   async _remove (id: NullableId, _params?: ServiceParams): Promise<Result | Result[]>
   async _remove (id: NullableId, params: ServiceParams = {} as ServiceParams): Promise<Result | Result[]> {
-    throw new NotImplemented();
+    return id
+      ? this._removeById(id, params)
+      : this._removeByParams(params);
+  }
+
+  private async _removeById (id: Id, params?: ServiceParams): Promise<Result> {
+    const entity = await this._get(id, params);
+
+    await this.em.removeAndFlush(entity);
+
+    return entity;
+  }
+
+  private async _removeByParams (params?: ServiceParams): Promise<Result[]> {
+    const entities = await this._findUnpaginated(params as ServiceParams);
+    await this.em.removeAndFlush(entities);
+
+    return entities;
   }
 
   private stripSpecialFeathersQuery (query: Query): Query {
