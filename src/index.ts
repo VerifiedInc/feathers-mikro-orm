@@ -33,6 +33,8 @@ export class MikroORMAdapter<
     this.paginate = options.paginate;
   }
 
+  // find
+
   async $find (_params?: ServiceParams & { paginate?: PaginationOptions }): Promise<Paginated<Result>>
   async $find (_params?: ServiceParams & { paginate: false }): Promise<Result[]>
   async $find (_params: ServiceParams = {} as ServiceParams): Promise<Result[] | Paginated<Result>> {
@@ -52,6 +54,96 @@ export class MikroORMAdapter<
       return await this._findUnpaginated(_params);
     }
   }
+
+  // get
+
+  async $get (id: Id, _params?: ServiceParams): Promise<Result> {
+    throw new NotImplemented();
+  }
+
+  async _get (id: NullableId, params: ServiceParams = {} as ServiceParams): Promise<Result> {
+    return id == null
+      ? await this._getByParams(params)
+      : await this._getById(id);
+  }
+
+  // create
+
+  async $create (data: Partial<Data>, params?: ServiceParams): Promise<Result>
+  async $create (data: Partial<Data>[], params?: ServiceParams): Promise<Result[]>
+  async $create (
+    data: Partial<Data> | Partial<Data>[],
+    _params: ServiceParams = {} as ServiceParams
+  ): Promise<Result | Result[]> {
+    throw new NotImplemented();
+  }
+
+  async _create (data: Data, params?: ServiceParams): Promise<Result>
+  async _create (data: Data[], params?: ServiceParams): Promise<Result[]>
+  async _create (data: Data | Data[], params?: ServiceParams): Promise<Result | Result[]>
+  async _create (
+    data: Data | Data[],
+    _params: ServiceParams = {} as ServiceParams
+  ): Promise<Result | Result[]> {
+    return Array.isArray(data)
+      ? this._createMany(data, _params)
+      : this._createOne(data, _params);
+  }
+
+  // update
+
+  async $update (id: Id, data: Data, params?: ServiceParams): Promise<Result> {
+    throw new NotImplemented();
+  }
+
+  async _update (id: Id, data: Data, params: ServiceParams = {} as ServiceParams): Promise<Result> {
+    throw new NotImplemented();
+  }
+
+  async $patch (id: null, data: Partial<Data>, params?: ServiceParams): Promise<Result[]>
+  async $patch (id: Id, data: Partial<Data>, params?: ServiceParams): Promise<Result>
+  async $patch (
+    id: NullableId,
+    data: Partial<Data>,
+    _params: ServiceParams = {} as ServiceParams
+  ): Promise<Result | Result[]> {
+    throw new NotImplemented();
+  }
+
+  // patch
+
+  async _patch (id: null, data: Data, params?: ServiceParams): Promise<Result[]>
+  async _patch (id: Id, data: Data, params?: ServiceParams): Promise<Result>
+  async _patch (id: NullableId, data: Data | Data[], params?: ServiceParams): Promise<Result>
+  async _patch (
+    id: NullableId,
+    data: Data | Data[],
+    _params: ServiceParams = {} as ServiceParams
+  ): Promise<Result | Result[]> {
+    return id
+      ? this._patchById(id, data, _params)
+      : this._patchByParams(data, _params);
+  }
+
+  // remove
+
+  async $remove (id: null, params?: ServiceParams): Promise<Result[]>
+  async $remove (id: Id, params?: ServiceParams): Promise<Result>
+  async $remove (id: NullableId, _params?: ServiceParams): Promise<Result | Result[]>
+  async $remove (id: NullableId, params: ServiceParams = {} as ServiceParams): Promise<Result | Result[]> {
+    throw new NotImplemented();
+  }
+
+  async _remove (id: null, params?: ServiceParams): Promise<Result[]>
+  async _remove (id: Id, params?: ServiceParams): Promise<Result>
+  async _remove (id: NullableId, _params?: ServiceParams): Promise<Result | Result[]>
+  async _remove (id: NullableId, params: ServiceParams = {} as ServiceParams): Promise<Result | Result[]> {
+    return id
+      ? this._removeById(id, params)
+      : this._removeByParams(params);
+  }
+
+  // find helpers
 
   private async _findPaginated (params: ServiceParams & { paginate: PaginationOptions }): Promise<Paginated<Result> | Result[]> {
     const { paginate = {}, query } = params;
@@ -136,15 +228,7 @@ export class MikroORMAdapter<
     return entities;
   }
 
-  async $get (id: Id, _params?: ServiceParams): Promise<Result> {
-    throw new NotImplemented();
-  }
-
-  async _get (id: NullableId, params: ServiceParams = {} as ServiceParams): Promise<Result> {
-    return id == null
-      ? await this._getByParams(params)
-      : await this._getById(id);
-  }
+  // get helpers
 
   private async _getById (id: Id): Promise<Result> {
     const query: FilterQuery<Result> = {
@@ -172,26 +256,7 @@ export class MikroORMAdapter<
     return entity;
   }
 
-  async $create (data: Partial<Data>, params?: ServiceParams): Promise<Result>
-  async $create (data: Partial<Data>[], params?: ServiceParams): Promise<Result[]>
-  async $create (
-    data: Partial<Data> | Partial<Data>[],
-    _params: ServiceParams = {} as ServiceParams
-  ): Promise<Result | Result[]> {
-    throw new NotImplemented();
-  }
-
-  async _create (data: Data, params?: ServiceParams): Promise<Result>
-  async _create (data: Data[], params?: ServiceParams): Promise<Result[]>
-  async _create (data: Data | Data[], params?: ServiceParams): Promise<Result | Result[]>
-  async _create (
-    data: Data | Data[],
-    _params: ServiceParams = {} as ServiceParams
-  ): Promise<Result | Result[]> {
-    return Array.isArray(data)
-      ? this._createMany(data, _params)
-      : this._createOne(data, _params);
-  }
+  // create helpers
 
   private async _createOne (data: Data, params?: ServiceParams): Promise<Result> {
     const createdEntity = this.em.create<Result>(this.Entity, data);
@@ -207,36 +272,9 @@ export class MikroORMAdapter<
     return createdEntities;
   }
 
-  async $update (id: Id, data: Data, params?: ServiceParams): Promise<Result> {
-    throw new NotImplemented();
-  }
+  // update helpers
 
-  async _update (id: Id, data: Data, params: ServiceParams = {} as ServiceParams): Promise<Result> {
-    throw new NotImplemented();
-  }
-
-  async $patch (id: null, data: Partial<Data>, params?: ServiceParams): Promise<Result[]>
-  async $patch (id: Id, data: Partial<Data>, params?: ServiceParams): Promise<Result>
-  async $patch (
-    id: NullableId,
-    data: Partial<Data>,
-    _params: ServiceParams = {} as ServiceParams
-  ): Promise<Result | Result[]> {
-    throw new NotImplemented();
-  }
-
-  async _patch (id: null, data: Data, params?: ServiceParams): Promise<Result[]>
-  async _patch (id: Id, data: Data, params?: ServiceParams): Promise<Result>
-  async _patch (id: NullableId, data: Data | Data[], params?: ServiceParams): Promise<Result>
-  async _patch (
-    id: NullableId,
-    data: Data | Data[],
-    _params: ServiceParams = {} as ServiceParams
-  ): Promise<Result | Result[]> {
-    return id
-      ? this._patchById(id, data, _params)
-      : this._patchByParams(data, _params);
-  }
+  // patch helpers
 
   private async _patchById (id: Id, data: Data | Data[], params?: ServiceParams): Promise<Result> {
     if (Array.isArray(data)) {
@@ -267,21 +305,7 @@ export class MikroORMAdapter<
     return entities;
   }
 
-  async $remove (id: null, params?: ServiceParams): Promise<Result[]>
-  async $remove (id: Id, params?: ServiceParams): Promise<Result>
-  async $remove (id: NullableId, _params?: ServiceParams): Promise<Result | Result[]>
-  async $remove (id: NullableId, params: ServiceParams = {} as ServiceParams): Promise<Result | Result[]> {
-    throw new NotImplemented();
-  }
-
-  async _remove (id: null, params?: ServiceParams): Promise<Result[]>
-  async _remove (id: Id, params?: ServiceParams): Promise<Result>
-  async _remove (id: NullableId, _params?: ServiceParams): Promise<Result | Result[]>
-  async _remove (id: NullableId, params: ServiceParams = {} as ServiceParams): Promise<Result | Result[]> {
-    return id
-      ? this._removeById(id, params)
-      : this._removeByParams(params);
-  }
+  // remove helpers
 
   private async _removeById (id: Id, params?: ServiceParams): Promise<Result> {
     const entity = await this._get(id, params);
@@ -297,6 +321,8 @@ export class MikroORMAdapter<
 
     return entities;
   }
+
+  // general helpers
 
   private stripSpecialFeathersQuery (query: Query): Query {
     /**
