@@ -1,11 +1,11 @@
 import { AdapterService, ServiceOptions } from '@feathersjs/adapter-commons';
 import { NullableId, Paginated, PaginationOptions, Params } from '@feathersjs/feathers';
-import { EntityRepository, MikroORM } from '@mikro-orm/core';
+import { EntityRepository, MikroORM, EntityData } from '@mikro-orm/core';
 interface MikroOrmServiceOptions<T = any> extends Partial<ServiceOptions> {
     Entity: new (...args: any[]) => T;
     orm: MikroORM;
 }
-export declare class Service<T = any> extends AdapterService {
+export declare class Service<T extends object = any> extends AdapterService {
     protected orm: MikroORM;
     protected Entity: new (...args: any[]) => T;
     protected name: string;
@@ -13,8 +13,8 @@ export declare class Service<T = any> extends AdapterService {
     constructor(options: MikroOrmServiceOptions<T>);
     get(id: NullableId, params?: Params): Promise<T>;
     find(params?: Params): Promise<T[] | Paginated<T>>;
-    create(data: Partial<T>, params?: Params): Promise<T>;
-    patch(id: NullableId, data: Partial<T>, params?: Params): Promise<T | T[]>;
+    create(data: EntityData<T>, params?: Params): Promise<T>;
+    patch(id: NullableId, data: EntityData<T>, params?: Params): Promise<T | T[]>;
     remove(id: NullableId, params?: Params): Promise<T | {
         success: boolean;
     }>;
@@ -45,5 +45,5 @@ export declare class Service<T = any> extends AdapterService {
      */
     private _translateFeathersQueryToFindOptions;
 }
-export default function <T = any>(options: MikroOrmServiceOptions<T>): Service<T>;
+export default function <T extends object = any>(options: MikroOrmServiceOptions<T>): Service<T>;
 export {};

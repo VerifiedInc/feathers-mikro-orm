@@ -1,6 +1,6 @@
 import { AdapterService, ServiceOptions } from '@feathersjs/adapter-commons';
 import { NullableId, Paginated, PaginationOptions, Params } from '@feathersjs/feathers';
-import { EntityRepository, MikroORM, wrap, Utils, FilterQuery, FindOptions, QueryOrder, QueryOrderNumeric } from '@mikro-orm/core';
+import { EntityRepository, MikroORM, wrap, Utils, FilterQuery, FindOptions, QueryOrder, QueryOrderNumeric, EntityData } from '@mikro-orm/core';
 import { NotFound } from '@feathersjs/errors';
 import { isEmpty, min, omit, pick } from 'lodash';
 
@@ -24,7 +24,7 @@ const feathersSpecialQueryParameters = [
   '$or'
 ];
 
-export class Service<T = any> extends AdapterService {
+export class Service<T extends object = any> extends AdapterService {
   protected orm: MikroORM;
   protected Entity: new (...args: any[]) => T;
   protected name: string;
@@ -58,7 +58,7 @@ export class Service<T = any> extends AdapterService {
     }
 
     // mikro-orm filter query is query params minus special feathers query params
-    const query = omit(params.query, feathersSpecialQueryParameters);
+    const query = omit(params.query, feathersSpecialQueryParameters) as FilterQuery<T>;
 
     // paginate object from params overrides default pagination options set at initialization
     const paginationOptions = { ...this.paginationOptions, ...params.paginate };
@@ -104,14 +104,14 @@ export class Service<T = any> extends AdapterService {
     }
   }
 
-  async create (data: Partial<T>, params?: Params): Promise<T> {
+  async create (data: EntityData<T>, params?: Params): Promise<T> {
     const entity = new (this.Entity as any)(data);
 
     await this._getEntityRepository().persistAndFlush(entity);
     return entity;
   }
 
-  async patch (id: NullableId, data: Partial<T>, params?: Params): Promise<T | T[]> {
+  async patch (id: NullableId, data: EntityData<T>, params?: Params): Promise<T | T[]> {
     const where = params?.where || id;
     const entityRepository = this._getEntityRepository();
 
@@ -244,6 +244,6 @@ export class Service<T = any> extends AdapterService {
   }
 }
 
-export default function<T = any> (options: MikroOrmServiceOptions<T>): Service<T> {
-  return new Service(options);
+export default function<T extends object = any> (options: MikroOrmServiceOptions<T>): Service<T> {
+  return new Service<T>(options);
 }
