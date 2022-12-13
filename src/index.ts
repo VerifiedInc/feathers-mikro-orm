@@ -51,7 +51,7 @@ export class MikroORMAdapter<
       : await this._getById(id);
   }
 
-  async _getById (id: Id): Promise<Result> {
+  private async _getById (id: Id): Promise<Result> {
     const query: FilterQuery<Result> = {
       [this.id]: id
     } as FilterQuery<Result>;
@@ -65,7 +65,7 @@ export class MikroORMAdapter<
     return entity;
   }
 
-  async _getByParams (params: ServiceParams): Promise<Result> {
+  private async _getByParams (params: ServiceParams): Promise<Result> {
     const query = params.query as FilterQuery<Result>;
 
     const entity = await this.em.findOne<Result>(this.Entity, query);
