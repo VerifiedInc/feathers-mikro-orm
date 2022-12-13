@@ -1,3 +1,108 @@
+import {
+  AdapterBase,
+  AdapterParams,
+  AdapterQuery,
+  AdapterServiceOptions,
+  PaginationOptions
+} from '@feathersjs/adapter-commons';
+import { NotImplemented } from '@feathersjs/errors/lib';
+import { Id, NullableId, Paginated, Params } from '@feathersjs/feathers';
+import { EntityManager } from '@mikro-orm/core';
+
+export interface MikroORMServiceOptions<T = any> extends AdapterServiceOptions {
+
+}
+
+export class MikroORMAdapter<
+  Result = any,
+  Data = Partial<Result>,
+  ServiceParams extends Params = Params,
+> extends AdapterBase<Result, Data, ServiceParams, MikroORMServiceOptions<Result> > {
+  constructor (options: MikroORMServiceOptions<Result> = {}) {
+    super(options);
+  }
+
+  async $find (_params?: ServiceParams & { paginate?: PaginationOptions }): Promise<Paginated<Result>>
+  async $find (_params?: ServiceParams & { paginate: false }): Promise<Result[]>
+  async $find (_params: ServiceParams = {} as ServiceParams): Promise<Result[] | Paginated<Result>> {
+    throw new NotImplemented();
+  }
+
+  async _find(_params?: ServiceParams & { paginate?: PaginationOptions}): Promise<Paginated<Result>>
+  async _find(_params?: ServiceParams & { paginate: false }): Promise<Result[]>
+  async _find (_params: ServiceParams = {} as ServiceParams): Promise<Result[] | Paginated<Result>> {
+    throw new NotImplemented();
+  }
+
+  async $get (id: Id, _params?: ServiceParams): Promise<Result> {
+    throw new NotImplemented();
+  }
+
+  async _get (id: NullableId, params: ServiceParams = {} as ServiceParams): Promise<Result> {
+    throw new NotImplemented();
+  }
+
+  async $create (data: Partial<Data>, params?: ServiceParams): Promise<Result>
+  async $create (data: Partial<Data>[], params?: ServiceParams): Promise<Result[]>
+  async $create (
+    data: Partial<Data> | Partial<Data>[],
+    _params: ServiceParams = {} as ServiceParams
+  ): Promise<Result | Result[]> {
+    throw new NotImplemented();
+  }
+
+  async _create (data: Partial<Data>, params?: ServiceParams): Promise<Result>
+  async _create (data: Partial<Data>[], params?: ServiceParams): Promise<Result[]>
+  async _create (
+    data: Partial<Data> | Partial<Data>[],
+    _params: ServiceParams = {} as ServiceParams
+  ): Promise<Result | Result[]> {
+    throw new NotImplemented();
+  }
+
+  async $update (id: Id, data: Data, params?: ServiceParams): Promise<Result> {
+    throw new NotImplemented();
+  }
+
+  async _update (id: Id, data: Data, params: ServiceParams = {} as ServiceParams): Promise<Result> {
+    throw new NotImplemented();
+  }
+
+  async $patch (id: null, data: Partial<Data>, params?: ServiceParams): Promise<Result[]>
+  async $patch (id: Id, data: Partial<Data>, params?: ServiceParams): Promise<Result>
+  async $patch (
+    id: NullableId,
+    data: Partial<Data>,
+    _params: ServiceParams = {} as ServiceParams
+  ): Promise<Result | Result[]> {
+    throw new NotImplemented();
+  }
+
+  async _patch (id: null, data: Partial<Data>, params?: ServiceParams): Promise<Result[]>
+  async _patch (id: Id, data: Partial<Data>, params?: ServiceParams): Promise<Result>
+  async _patch (
+    id: NullableId,
+    data: Partial<Data>,
+    _params: ServiceParams = {} as ServiceParams
+  ): Promise<Result | Result[]> {
+    throw new NotImplemented();
+  }
+
+  async $remove (id: null, params?: ServiceParams): Promise<Result[]>
+  async $remove (id: Id, params?: ServiceParams): Promise<Result>
+  async $remove (id: NullableId, _params?: ServiceParams): Promise<Result | Result[]>
+  async $remove (id: NullableId, params: ServiceParams = {} as ServiceParams): Promise<Result | Result[]> {
+    throw new NotImplemented();
+  }
+
+  async _remove (id: null, params?: ServiceParams): Promise<Result[]>
+  async _remove (id: Id, params?: ServiceParams): Promise<Result>
+  async _remove (id: NullableId, _params?: ServiceParams): Promise<Result | Result[]>
+  async _remove (id: NullableId, params: ServiceParams = {} as ServiceParams): Promise<Result | Result[]> {
+    throw new NotImplemented();
+  }
+}
+
 // import { AdapterService, ServiceOptions } from '@feathersjs/adapter-commons';
 // import { NullableId, Paginated, PaginationOptions, Params } from '@feathersjs/feathers';
 // import { EntityRepository, MikroORM, wrap, Utils, FilterQuery, FindOptions, QueryOrder, QueryOrderNumeric, EntityData } from '@mikro-orm/core';
