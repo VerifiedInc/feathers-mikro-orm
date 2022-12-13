@@ -3,11 +3,13 @@ import {
   AdapterParams,
   AdapterQuery,
   AdapterServiceOptions,
-  PaginationOptions
+  PaginationOptions,
+  PaginationParams
 } from '@feathersjs/adapter-commons';
 import { MethodNotAllowed, NotFound, NotImplemented } from '@feathersjs/errors/lib';
-import { Id, NullableId, Paginated, Params } from '@feathersjs/feathers';
-import { EntityManager, FilterQuery, RequiredEntityData } from '@mikro-orm/core';
+import { Id, NullableId, Paginated, Params, Query } from '@feathersjs/feathers';
+import { EntityManager, FilterQuery, FindOptions, RequiredEntityData } from '@mikro-orm/core';
+import { min, omit } from 'lodash';
 
 export interface MikroORMServiceOptions<Result = any> extends AdapterServiceOptions {
   em: EntityManager;
@@ -21,12 +23,14 @@ export class MikroORMAdapter<
 > extends AdapterBase<Result, Data, ServiceParams, MikroORMServiceOptions<Result> > {
   protected readonly em: EntityManager;
   protected readonly Entity: any;
+  protected readonly paginate?: PaginationParams;
 
   constructor (options: MikroORMServiceOptions<Result>) {
     super(options);
 
     this.em = options.em;
     this.Entity = options.Entity;
+    this.paginate = options.paginate;
   }
 
   async $find (_params?: ServiceParams & { paginate?: PaginationOptions }): Promise<Paginated<Result>>
@@ -38,7 +42,98 @@ export class MikroORMAdapter<
   async _find(_params?: ServiceParams & { paginate?: PaginationOptions}): Promise<Paginated<Result>>
   async _find(_params?: ServiceParams & { paginate: false }): Promise<Result[]>
   async _find (_params: ServiceParams = {} as ServiceParams): Promise<Result[] | Paginated<Result>> {
-    throw new NotImplemented();
+    if (!_params) {
+      return await this._findAll();
+    }
+
+    if ((_params as ServiceParams & { paginate: PaginationOptions }).paginate) {
+      return await this._findPaginated(_params as ServiceParams & { paginate: PaginationOptions });
+    } else {
+      return await this._findUnpaginated(_params);
+    }
+  }
+
+  private async _findPaginated (params: ServiceParams & { paginate: PaginationOptions }): Promise<Paginated<Result> | Result[]> {
+    const { paginate = {}, query } = params;
+
+    // pagination options from params override the default ones from the service
+    const paginationOptions = this.paginate
+      ? {
+        ...this.paginate,
+        ...paginate
+      }
+      : paginate;
+
+    /**
+     * limit is
+     * - the lower value of params.query.$limit and paginationOptions.max, if both are present
+     * - params.query.$limit, if paginationOptions.max is not present
+     * - paginationOptions.default (may be undefined), if params.query.$limit is not present
+     */
+    const $limit = query?.$limit;
+    let limit: number | undefined = paginationOptions?.default;
+    if (paginationOptions?.max) {
+      if ($limit) {
+        limit = min([$limit, paginationOptions.max]);
+      } else {
+        limit = paginationOptions.max;
+      }
+      // eslint-disable-next-line brace-style
+    }
+    // 0 is a special $limit value that indicates that only a counting query should be performed
+    // don't treat it the same as other falsey values
+    else if ($limit || $limit === 0) {
+      limit = params.query?.$limit;
+    }
+
+    const findOptions = this.translateFeathersQueryToMikroORMFindOptions(params.query || {});
+
+    // if limit is 0, only run a count query
+    // and return a Paginated object with the count and an empty data array
+    if (limit === 0) {
+      const total = await this._findCount(query || {});
+      return {
+        total,
+        data: [],
+        limit,
+        skip: findOptions.offset || 0
+      };
+    }
+
+    // if limit is set, run a findAndCount query and return a Paginated object
+    if (limit) {
+      const [data, total] = await this.em.findAndCount<Result>(this.Entity, query as FilterQuery<Result>, findOptions);
+
+      return {
+        total,
+        limit,
+        skip: findOptions.offset || 0,
+        data
+      };
+    }
+
+    // if limit is not set, run an unpaginated find query
+    return await this._findUnpaginated(params);
+  }
+
+  private async _findCount (
+    query: Query
+  ): Promise<number> {
+    const count = await this.em.count<Result>(this.Entity, query as FilterQuery<Result>);
+
+    return count;
+  }
+
+  private async _findUnpaginated (params: ServiceParams): Promise<Result[]> {
+    const entities = await this.em.find<Result>(this.Entity, params.query as FilterQuery<Result>);
+
+    return entities;
+  }
+
+  private async _findAll (): Promise<Result[]> {
+    const entities = await this.em.find<Result>(this.Entity, {} as FilterQuery<Result>);
+
+    return entities;
   }
 
   async $get (id: Id, _params?: ServiceParams): Promise<Result> {
@@ -153,6 +248,29 @@ export class MikroORMAdapter<
   async _remove (id: NullableId, _params?: ServiceParams): Promise<Result | Result[]>
   async _remove (id: NullableId, params: ServiceParams = {} as ServiceParams): Promise<Result | Result[]> {
     throw new NotImplemented();
+  }
+
+  private stripSpecialFeathersQuery (query: Query): Query {
+    /**
+     * params used by the feathers query syntax that are not understood by MikroORM
+     */
+    const specialFeathersSyntax = [
+      '$limit',
+      '$skip',
+      '$sort',
+      '$select'
+    ];
+
+    return omit(query, specialFeathersSyntax);
+  }
+
+  private translateFeathersQueryToMikroORMFindOptions (query: Query): FindOptions<Result> {
+    return {
+      ...this.stripSpecialFeathersQuery(query),
+      orderBy: query.$sort,
+      offset: query.$skip,
+      fields: query.$select
+    };
   }
 }
 
