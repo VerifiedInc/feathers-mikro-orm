@@ -40,7 +40,7 @@ jobs:
           node-version: 12.x
 
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: npm ci
 
       # ref: https://github.community/t/auto-update-package-json-on-publishing/16894
       - name: Update package version
