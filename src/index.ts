@@ -9,7 +9,7 @@ import { MethodNotAllowed, NotImplemented } from '@feathersjs/errors/lib';
 import { Id, NullableId, Paginated, Params } from '@feathersjs/feathers';
 import { EntityManager } from '@mikro-orm/core';
 
-export interface MikroORMServiceOptions<T = any> extends AdapterServiceOptions {
+export interface MikroORMServiceOptions<Result = any> extends AdapterServiceOptions {
 
 }
 
@@ -187,6 +187,12 @@ export class MikroORMService<
 
     return sanitizedParams;
   }
+}
+
+export function createService<Result = any, Data = Partial<Result>, ServiceParams extends Params = Params> (
+  options: MikroORMServiceOptions<Result>
+): MikroORMService<Result, Data, ServiceParams> {
+  return new MikroORMService<Result, Data, ServiceParams>(options);
 }
 
 // import { AdapterService, ServiceOptions } from '@feathersjs/adapter-commons';
