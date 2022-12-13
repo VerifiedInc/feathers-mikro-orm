@@ -5,9 +5,9 @@ import {
   AdapterServiceOptions,
   PaginationOptions
 } from '@feathersjs/adapter-commons';
-import { MethodNotAllowed, NotImplemented } from '@feathersjs/errors/lib';
+import { MethodNotAllowed, NotFound, NotImplemented } from '@feathersjs/errors/lib';
 import { Id, NullableId, Paginated, Params } from '@feathersjs/feathers';
-import { EntityManager, RequiredEntityData } from '@mikro-orm/core';
+import { EntityManager, FilterQuery, RequiredEntityData } from '@mikro-orm/core';
 
 export interface MikroORMServiceOptions<Result = any> extends AdapterServiceOptions {
   em: EntityManager;
@@ -46,7 +46,35 @@ export class MikroORMAdapter<
   }
 
   async _get (id: NullableId, params: ServiceParams = {} as ServiceParams): Promise<Result> {
-    throw new NotImplemented();
+    return id == null
+      ? await this._getByParams(params)
+      : await this._getById(id);
+  }
+
+  async _getById (id: Id): Promise<Result> {
+    const query: FilterQuery<Result> = {
+      [this.id]: id
+    } as FilterQuery<Result>;
+
+    const entity = await this.em.findOne<Result>(this.Entity, query);
+
+    if (!entity) {
+      throw new NotFound();
+    }
+
+    return entity;
+  }
+
+  async _getByParams (params: ServiceParams): Promise<Result> {
+    const query = params.query as FilterQuery<Result>;
+
+    const entity = await this.em.findOne<Result>(this.Entity, query);
+
+    if (!entity) {
+      throw new NotFound();
+    }
+
+    return entity;
   }
 
   async $create (data: Partial<Data>, params?: ServiceParams): Promise<Result>
