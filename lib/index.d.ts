@@ -1,49 +1,80 @@
-import { AdapterService, ServiceOptions } from '@feathersjs/adapter-commons';
-import { NullableId, Paginated, PaginationOptions, Params } from '@feathersjs/feathers';
-import { EntityRepository, MikroORM, EntityData } from '@mikro-orm/core';
-interface MikroOrmServiceOptions<T = any> extends Partial<ServiceOptions> {
-    Entity: new (...args: any[]) => T;
-    orm: MikroORM;
+import { AdapterBase, AdapterServiceOptions, PaginationOptions, PaginationParams } from '@feathersjs/adapter-commons';
+import { Id, NullableId, Paginated, Params } from '@feathersjs/feathers';
+import { EntityManager, RequiredEntityData } from '@mikro-orm/core';
+export interface MikroORMServiceOptions extends AdapterServiceOptions {
+    em: EntityManager;
+    Entity: any;
 }
-export declare class Service<T extends object = any> extends AdapterService {
-    protected orm: MikroORM;
-    protected Entity: new (...args: any[]) => T;
-    protected name: string;
-    protected paginationOptions?: Partial<PaginationOptions>;
-    constructor(options: MikroOrmServiceOptions<T>);
-    get(id: NullableId, params?: Params): Promise<T>;
-    find(params?: Params): Promise<T[] | Paginated<T>>;
-    create(data: EntityData<T>, params?: Params): Promise<T>;
-    patch(id: NullableId, data: EntityData<T>, params?: Params): Promise<T | T[]>;
-    remove(id: NullableId, params?: Params): Promise<T | {
-        success: boolean;
-    }>;
-    /**
-     * Helper to got the EntityRepository with fresh request context via Entity Manager forking
-     * ref: https://mikro-orm.io/docs/identity-map/#forking-entity-manager, https://mikro-orm.io/docs/identity-map/
-     * @returns
-     */
-    protected _getEntityRepository(): EntityRepository<T>;
-    /**
-   * helper to get a total count of entities matching a query
-   * @param query the query to match by
-   * @param skip the $skip value from query params. kind of nonsensical and will not be used in the actual query, but is required in the return type. default 0.
-   * @returns Promise<Paginated<never>> a feathers Paginated object with the total count
-   */
-    private _findCount;
-    /**
-     * helper to get paginated results matching a query
-     * @param query the filter query to match by
-     * @param options find options
-     * @returns Promise<Paginated<T>> a feathers Paginated object with the query results
-     */
+export declare class MikroORMAdapter<Result extends object = any, Data extends RequiredEntityData<Result> = RequiredEntityData<Result>, ServiceParams extends Params = Params> extends AdapterBase<Result, Data, ServiceParams, MikroORMServiceOptions> {
+    protected readonly em: EntityManager;
+    protected readonly Entity: any;
+    protected readonly paginate?: PaginationParams;
+    constructor(options: MikroORMServiceOptions);
+    $find(_params?: ServiceParams & {
+        paginate?: PaginationOptions;
+    }): Promise<Paginated<Result>>;
+    $find(_params?: ServiceParams & {
+        paginate: false;
+    }): Promise<Result[]>;
+    _find(_params?: ServiceParams & {
+        paginate?: PaginationOptions;
+    }): Promise<Paginated<Result>>;
+    _find(_params?: ServiceParams & {
+        paginate: false;
+    }): Promise<Result[]>;
+    $get(_id: Id, _params?: ServiceParams): Promise<Result>;
+    _get(id: NullableId, params?: ServiceParams): Promise<Result>;
+    $create(data: Partial<Data>, params?: ServiceParams): Promise<Result>;
+    $create(data: Partial<Data>[], params?: ServiceParams): Promise<Result[]>;
+    _create(data: Data, params?: ServiceParams): Promise<Result>;
+    _create(data: Data[], params?: ServiceParams): Promise<Result[]>;
+    _create(data: Data | Data[], params?: ServiceParams): Promise<Result | Result[]>;
+    $update(_id: Id, _data: Data, _params?: ServiceParams): Promise<Result>;
+    _update(id: Id, data: Data, _params?: ServiceParams): Promise<Result>;
+    $patch(id: null, data: Partial<Data>, params?: ServiceParams): Promise<Result[]>;
+    $patch(id: Id, data: Partial<Data>, params?: ServiceParams): Promise<Result>;
+    _patch(id: null, data: Data, params?: ServiceParams): Promise<Result[]>;
+    _patch(id: Id, data: Data, params?: ServiceParams): Promise<Result>;
+    _patch(id: NullableId, data: Data | Data[], params?: ServiceParams): Promise<Result>;
+    $remove(id: null, params?: ServiceParams): Promise<Result[]>;
+    $remove(id: Id, params?: ServiceParams): Promise<Result>;
+    $remove(id: NullableId, _params?: ServiceParams): Promise<Result | Result[]>;
+    _remove(id: null, params?: ServiceParams): Promise<Result[]>;
+    _remove(id: Id, params?: ServiceParams): Promise<Result>;
+    _remove(id: NullableId, _params?: ServiceParams): Promise<Result | Result[]>;
     private _findPaginated;
-    /**
-     * helper to translate feathers query syntax to mikro-orm options syntax
-     * @param query feathers query
-     * @returns FindOptions mikro-orm FindOptions
-     */
-    private _translateFeathersQueryToFindOptions;
+    private _findCount;
+    private _findUnpaginated;
+    private _findAll;
+    private _getById;
+    private _getByParams;
+    private _createOne;
+    private _createMany;
+    private _patchById;
+    private _patchByParams;
+    private _removeById;
+    private _removeByParams;
+    private stripSpecialFeathersQuery;
+    private translateFeathersQueryToMikroORMFindOptions;
 }
-export default function <T extends object = any>(options: MikroOrmServiceOptions<T>): Service<T>;
-export {};
+export declare class MikroORMService<Result extends object = any, Data extends RequiredEntityData<Result> = RequiredEntityData<Result>, ServiceParams extends Params = Params> extends MikroORMAdapter<Result, Data, ServiceParams> {
+    find(params?: ServiceParams & {
+        paginate?: PaginationOptions;
+    }): Promise<Paginated<Result>>;
+    find(params?: ServiceParams & {
+        paginate: false;
+    }): Promise<Result[]>;
+    find(params?: ServiceParams): Promise<Result[] | Paginated<Result>>;
+    get(id: NullableId, params?: ServiceParams): Promise<Result>;
+    create(data: Data, params?: ServiceParams): Promise<Result>;
+    create(data: Data[], params?: ServiceParams): Promise<Result[]>;
+    update(id: Id, data: Data, params?: ServiceParams): Promise<Result>;
+    patch(id: Id, data: Data, params?: ServiceParams): Promise<Result>;
+    patch(id: null, data: Data[], params?: ServiceParams): Promise<Result[]>;
+    patch(id: NullableId, data: Data | Data[], params?: ServiceParams): Promise<Result>;
+    remove(id: Id, params?: ServiceParams): Promise<Result>;
+    remove(id: null, params?: ServiceParams): Promise<Result[]>;
+    private sanitizeParams;
+    private sanitizeParamsAndRemoveLimit;
+}
+export declare function createService<Result extends object, Data extends RequiredEntityData<Result> = RequiredEntityData<Result>, ServiceParams extends Params = Params>(options: MikroORMServiceOptions): MikroORMService<Result, Data, ServiceParams>;
