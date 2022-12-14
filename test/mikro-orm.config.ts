@@ -7,6 +7,7 @@ export const config: Options = {
   type: 'postgresql',
   dbName: 'feathers_mikro_orm_test',
   host: 'localhost',
+  user: 'unumid',
   entities: [Book, BaseEntity],
   debug: true,
   metadataProvider: TsMorphMetadataProvider
