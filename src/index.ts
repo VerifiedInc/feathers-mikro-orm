@@ -1,7 +1,5 @@
 import {
   AdapterBase,
-  AdapterParams,
-  AdapterQuery,
   AdapterServiceOptions,
   PaginationOptions,
   PaginationParams
@@ -11,21 +9,24 @@ import { Id, NullableId, Paginated, Params, Query } from '@feathersjs/feathers';
 import { EntityData, EntityManager, FilterQuery, FindOptions, RequiredEntityData } from '@mikro-orm/core';
 import { min, omit } from 'lodash';
 
-export interface MikroORMServiceOptions<Result = any> extends AdapterServiceOptions {
+export interface MikroORMServiceOptions extends AdapterServiceOptions {
   em: EntityManager;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   Entity: any;
 }
 
 export class MikroORMAdapter<
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   Result extends object = any,
   Data extends RequiredEntityData<Result> = RequiredEntityData<Result>,
   ServiceParams extends Params = Params,
-> extends AdapterBase<Result, Data, ServiceParams, MikroORMServiceOptions<Result> > {
+> extends AdapterBase<Result, Data, ServiceParams, MikroORMServiceOptions> {
   protected readonly em: EntityManager;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   protected readonly Entity: any;
   protected readonly paginate?: PaginationParams;
 
-  constructor (options: MikroORMServiceOptions<Result>) {
+  constructor (options: MikroORMServiceOptions) {
     super(options);
 
     this.em = options.em;
@@ -57,7 +58,7 @@ export class MikroORMAdapter<
 
   // get
 
-  async $get (id: Id, _params?: ServiceParams): Promise<Result> {
+  async $get (_id: Id, _params?: ServiceParams): Promise<Result> {
     throw new NotImplemented();
   }
 
@@ -92,11 +93,11 @@ export class MikroORMAdapter<
 
   // update
 
-  async $update (id: Id, data: Data, params?: ServiceParams): Promise<Result> {
+  async $update (_id: Id, _data: Data, _params?: ServiceParams): Promise<Result> {
     throw new NotImplemented();
   }
 
-  async _update (id: Id, data: Data, params: ServiceParams = {} as ServiceParams): Promise<Result> {
+  async _update (id: Id, data: Data, _params: ServiceParams = {} as ServiceParams): Promise<Result> {
     throw new NotImplemented();
   }
 
@@ -130,7 +131,7 @@ export class MikroORMAdapter<
   async $remove (id: null, params?: ServiceParams): Promise<Result[]>
   async $remove (id: Id, params?: ServiceParams): Promise<Result>
   async $remove (id: NullableId, _params?: ServiceParams): Promise<Result | Result[]>
-  async $remove (id: NullableId, params: ServiceParams = {} as ServiceParams): Promise<Result | Result[]> {
+  async $remove (id: NullableId, _params: ServiceParams = {} as ServiceParams): Promise<Result | Result[]> {
     throw new NotImplemented();
   }
 
@@ -258,14 +259,14 @@ export class MikroORMAdapter<
 
   // create helpers
 
-  private async _createOne (data: Data, params?: ServiceParams): Promise<Result> {
+  private async _createOne (data: Data, _params?: ServiceParams): Promise<Result> {
     const createdEntity = this.em.create<Result>(this.Entity, data);
     await this.em.persistAndFlush(createdEntity);
 
     return createdEntity;
   }
 
-  private async _createMany (data: Data[], params?: ServiceParams): Promise<Result[]> {
+  private async _createMany (data: Data[], _params?: ServiceParams): Promise<Result[]> {
     const createdEntities = data.map((entityData) => this.em.create<Result>(this.Entity, entityData));
     await this.em.persistAndFlush(createdEntities);
 
@@ -295,6 +296,7 @@ export class MikroORMAdapter<
 
     for (const entity of entities) {
       const changeSet = Array.isArray(data)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ? data.find((item) => (item as any)[this.id] === (entity as any)[this.id])
         : data;
       this.em.assign<Result>(entity, changeSet as EntityData<Result>);
@@ -349,6 +351,7 @@ export class MikroORMAdapter<
 }
 
 export class MikroORMService<
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   Result extends object = any,
   Data extends RequiredEntityData<Result> = RequiredEntityData<Result>,
   ServiceParams extends Params = Params
@@ -438,7 +441,7 @@ export function createService<
   Data extends RequiredEntityData<Result> = RequiredEntityData<Result>,
   ServiceParams extends Params = Params
 > (
-  options: MikroORMServiceOptions<Result>
+  options: MikroORMServiceOptions
 ): MikroORMService<Result, Data, ServiceParams> {
   return new MikroORMService<Result, Data, ServiceParams>(options);
 }
