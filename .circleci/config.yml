@@ -7,24 +7,24 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: yarn-v1-{{ checksum "yarn.lock" }}--{{ arch }}
+          key: lock-v1-{{ checksum "package-lock.json" }}--{{ arch }}
 
       - restore_cache:
           key: node-v1-{{ checksum "package.json" }}--{{ arch }}
 
-      - run: yarn install --frozen-lockfile
+      - run: npm ci
 
       - save_cache:
-          key: yarn-v1-{{ checksum "yarn.lock" }}--{{ arch }}
+          key: lock-v1-{{ checksum "package-lock.json" }}--{{ arch }}
           paths:
-            - .cache/yarn
+            - .cache/package-lock
 
       - save_cache:
           key: node-v1-{{ checksum "package.json" }}--{{ arch }}
           paths:
             - node_modules
 
-      - run: yarn lint
+      - run: npm run lint
 
   test:
     docker:
@@ -35,17 +35,17 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: yarn-v1-{{ checksum "yarn.lock" }}--{{ arch }}
+          key: lock-v1-{{ checksum "package-lock.json" }}--{{ arch }}
 
       - restore_cache:
           key: node-v1-{{ checksum "package.json" }}--{{ arch }}
 
-      - run: yarn install
+      - run: npm ci
 
       - save_cache:
-          key: yarn-v1-{{ checksum "yarn.lock" }}--{{ arch }}
+          key: lock-v1-{{ checksum "package-lock.json" }}--{{ arch }}
           paths:
-            - .cache/yarn
+            - .cache/package-lock
 
       - save_cache:
           key: node-v1-{{ checksum "package.json" }}--{{ arch }}
@@ -54,7 +54,7 @@ jobs:
 
       - run:
           name: Jest Tests
-          command: yarn test
+          command: npm run test
 
 workflows:
   lint-and-test:
