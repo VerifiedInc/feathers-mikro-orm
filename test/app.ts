@@ -15,7 +15,8 @@ export async function setupApp (): Promise<Application> {
     host: 'localhost',
     entities: [Book, BaseEntity],
     debug: false,
-    metadataProvider: TsMorphMetadataProvider
+    metadataProvider: TsMorphMetadataProvider,
+    user: 'unumid'
   };
 
   const orm = await MikroORM.init(config);
