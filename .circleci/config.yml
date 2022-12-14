@@ -3,7 +3,7 @@ version: 2.1
 jobs:
   lint:
     docker:
-      - image: circleci/node:12.7.0
+      - image: circleci/node:18.12.1
     steps:
       - checkout
       - restore_cache:
@@ -28,8 +28,8 @@ jobs:
 
   test:
     docker:
-      - image: circleci/node:12.7.0
-      - image: circleci/postgres:9.6.5-alpine-ram
+      - image: circleci/node:18.12.1
+      - image: circleci/postgres:14.5.0-alpine-ram
     steps:
       - checkout
       - restore_cache:
