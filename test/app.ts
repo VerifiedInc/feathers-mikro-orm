@@ -1,25 +1,19 @@
-import feathers, { Application } from '@feathersjs/feathers';
+import { feathers } from '@feathersjs/feathers';
 import { MikroORM, Options } from '@mikro-orm/core';
 import { TsMorphMetadataProvider } from '@mikro-orm/reflection';
 
-import createService from '../src/';
+import { createService } from '../src/';
 import { Book } from './entities/Book';
 import { BaseEntity } from './entities/BaseEntity';
+import { mikroOrm } from './mikro-orm';
+import { Application, ServiceTypes } from './declarations';
 
 export async function setupApp (): Promise<Application> {
-  const app = feathers();
+  const app = feathers<ServiceTypes, any>() as Application;
 
-  const config: Options = {
-    type: 'postgresql',
-    dbName: 'feathers_mikro_orm_test',
-    host: 'localhost',
-    entities: [Book, BaseEntity],
-    debug: false,
-    metadataProvider: TsMorphMetadataProvider
-  };
+  await mikroOrm(app);
 
-  const orm = await MikroORM.init(config);
-  app.set('orm', orm);
+  const orm = app.get('orm');
 
   const schemaGenerator = orm.getSchemaGenerator();
   await schemaGenerator.ensureDatabase();
@@ -30,7 +24,7 @@ export async function setupApp (): Promise<Application> {
 
   const bookService = createService({
     Entity: Book,
-    orm
+    em: orm.em
   });
 
   app.use('/book', bookService);

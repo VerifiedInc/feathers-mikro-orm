@@ -12,6 +12,6 @@ export class Book extends BaseEntity {
   constructor (options: { title: string; popularity?: number }) {
     super();
     this.title = options.title;
-    this.popularity = options.popularity || null;
+    this.popularity = options.popularity;
   }
 }
