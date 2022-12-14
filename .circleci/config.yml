@@ -29,6 +29,8 @@ jobs:
   test:
     docker:
       - image: cimg/node:18.12.1
+        environment:
+          POSTGRES_USER: unumid
       - image: cimg/postgres:14.5
     steps:
       - checkout
